@@ -1,15 +1,15 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 from reportlab.pdfgen import canvas
 from io import BytesIO
 import datetime
 
-# === Load API key ===
-api_key = st.secrets["openai_api_key"]
-openai.api_key = api_key
+# === Load OpenAI API key ===
+api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 
-# === System Prompt for AI ===
+# === System Prompt for GPT ===
 SYSTEM_PROMPT = (
     "You are a South Carolina DMV permit tutor. Only use information from the SC DMV "
     "Driver's Manual and the SC DMV practice test website at "
@@ -17,12 +17,7 @@ SYSTEM_PROMPT = (
     "Answer clearly and simply for a 15-year-old."
 )
 
-# === GPT Call Function ===
-def query_gpt(user_prompt):
-    from openai import OpenAI
-
-client = OpenAI(api_key=api_key)
-
+# === GPT Query Function ===
 def query_gpt(user_prompt):
     response = client.chat.completions.create(
         model="gpt-4-turbo",
@@ -33,7 +28,7 @@ def query_gpt(user_prompt):
     )
     return response.choices[0].message.content
 
-# === PDF Export ===
+# === PDF Export Function ===
 def create_pdf(text):
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer)
@@ -49,7 +44,7 @@ def create_pdf(text):
     buffer.seek(0)
     return buffer
 
-# === Simulated Login (Supabase-ready structure) ===
+# === Simulated User Session ===
 def login_placeholder():
     if "user" not in st.session_state:
         st.session_state["user"] = {
@@ -58,7 +53,7 @@ def login_placeholder():
         }
         st.session_state["progress_log"] = []
 
-# === Score Logging Function (placeholder for Supabase insert) ===
+# === Save Quiz Score ===
 def save_score(user_id, topic, correct, attempted):
     if "progress_log" not in st.session_state:
         st.session_state["progress_log"] = []
@@ -70,7 +65,7 @@ def save_score(user_id, topic, correct, attempted):
         "date": str(datetime.date.today())
     })
 
-# === App Interface ===
+# === App Setup ===
 st.set_page_config(page_title="SC DMV AI Tutor", layout="centered")
 st.title("SC DMV Permit Test Tutor")
 
