@@ -6,7 +6,7 @@ from io import BytesIO
 import datetime
 
 # === Load API key ===
-api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+api_key = st.secrets["openai_api_key"]
 openai.api_key = api_key
 
 # === System Prompt for AI ===
