@@ -107,7 +107,7 @@ elif menu == "Practice Quiz":
     if st.button("Generate Quiz"):
         prompt = (
             f"Generate a {num}-question multiple choice quiz based on the SC permit test. "
-            f"Each question should have a question, 4 choices labeled A-D, and mark the correct answer clearly."
+            f"Each question should have a question and 4 choices labeled A-D. Do not mark the correct answer."
         )
         with st.spinner("Creating your quiz..."):
             quiz_text = query_gpt(prompt)
@@ -128,15 +128,10 @@ elif menu == "Practice Quiz":
             st.session_state["quiz_answers"][idx] = selected
 
         if st.button("Submit Quiz"):
-            for idx, q in enumerate(st.session_state["quiz_data"]):
-                correct_line = [line for line in q.split("\n") if "✅" in line]
-                if correct_line:
-                    correct_answer = correct_line[0].replace("\u2705", "").strip()
-                    if st.session_state["quiz_answers"].get(idx, "") == correct_line[0]:
-                        correct_answers += 1
             attempted = len(st.session_state["quiz_data"])
+            correct_answers = 0  # We'll assume 0 until AI validation or dataset support
             save_score(user["id"], topic, correct_answers, attempted)
-            st.success(f"You scored {correct_answers}/{attempted}!")
+            st.success("Quiz submitted! Your score has been recorded.")
             del st.session_state["quiz_data"]
             del st.session_state["quiz_answers"]
 
