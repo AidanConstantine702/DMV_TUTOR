@@ -19,14 +19,19 @@ SYSTEM_PROMPT = (
 
 # === GPT Call Function ===
 def query_gpt(user_prompt):
-    response = openai.ChatCompletion.create(
+    from openai import OpenAI
+
+client = OpenAI(api_key=api_key)
+
+def query_gpt(user_prompt):
+    response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt}
         ]
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
 # === PDF Export ===
 def create_pdf(text):
