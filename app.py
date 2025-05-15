@@ -9,7 +9,7 @@ import datetime
 api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
-# === System Prompt for GPT ===
+# === Enhanced System Prompt ===
 SYSTEM_PROMPT = (
     "You are a certified South Carolina DMV Permit Test Tutor specializing in helping teenagers "
     "prepare for their written learner’s permit exam.\n\n"
@@ -101,22 +101,44 @@ if menu == "Tutor Chat":
 # === Practice Quiz ===
 elif menu == "Practice Quiz":
     st.header("Practice Quiz")
-    num = st.slider("Number of Questions", 5, 20, 10)
+    num = st.slider("Number of Questions", 5, 10, 5)
     topic = st.text_input("Topic (optional)", "General")
+
     if st.button("Generate Quiz"):
         prompt = (
             f"Generate a {num}-question multiple choice quiz based on the SC permit test. "
-            f"Each question should have 4 choices A-D, and mark the correct answer with ✅."
+            f"Each question should have a question, 4 choices labeled A-D, and mark the correct answer clearly."
         )
         with st.spinner("Creating your quiz..."):
-            quiz = query_gpt(prompt)
-            st.markdown(quiz)
+            quiz_text = query_gpt(prompt)
+            questions = quiz_text.strip().split("\n\n")
+            st.session_state["quiz_data"] = questions
+            st.session_state["quiz_answers"] = {}
 
-    st.subheader("Track Your Results")
-    correct = st.number_input("How many did you get right?", min_value=0, max_value=num, step=1)
-    if st.button("Submit Score"):
-        save_score(user["id"], topic, correct, num)
-        st.success("Score saved!")
+    if "quiz_data" in st.session_state:
+        correct_answers = 0
+        st.subheader("Take the Quiz")
+        for idx, q in enumerate(st.session_state["quiz_data"]):
+            if not q.strip():
+                continue
+            parts = q.split("\n")
+            question_text = parts[0]
+            options = parts[1:]
+            selected = st.radio(question_text, options, key=f"q_{idx}")
+            st.session_state["quiz_answers"][idx] = selected
+
+        if st.button("Submit Quiz"):
+            for idx, q in enumerate(st.session_state["quiz_data"]):
+                correct_line = [line for line in q.split("\n") if "✅" in line]
+                if correct_line:
+                    correct_answer = correct_line[0].replace("\u2705", "").strip()
+                    if st.session_state["quiz_answers"].get(idx, "") == correct_line[0]:
+                        correct_answers += 1
+            attempted = len(st.session_state["quiz_data"])
+            save_score(user["id"], topic, correct_answers, attempted)
+            st.success(f"You scored {correct_answers}/{attempted}!")
+            del st.session_state["quiz_data"]
+            del st.session_state["quiz_answers"]
 
 # === Flashcards ===
 elif menu == "Flashcards":
