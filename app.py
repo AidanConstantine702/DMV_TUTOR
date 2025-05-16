@@ -68,6 +68,50 @@ def login_placeholder():
         st.session_state["progress_log"] = []
 
 # === Save Quiz Score ===
+
+# === Flashcards ===
+elif menu == "Flashcards":
+    st.header("Flashcards")
+    topic = st.selectbox("Topic", ["Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"])
+    if st.button("Generate Flashcards"):
+        prompt = f"Generate 10 flashcards for '{topic}' using Q&A format based only on the SC permit test."
+        with st.spinner("Creating flashcards..."):
+            flashcards = query_gpt([
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ])
+            st.markdown(flashcards)
+            st.download_button("Download PDF", create_pdf(flashcards), file_name="flashcards.pdf")
+
+# === Study Plan ===
+elif menu == "Study Plan":
+    st.header("3-Day Study Plan")
+    if st.button("Create Plan"):
+        prompt = "I'm a 15-year-old preparing for the SC permit test. Create a 3-day plan focused on road signs, alcohol laws, and right-of-way rules."
+        with st.spinner("Planning..."):
+            plan = query_gpt([
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ])
+            st.markdown(plan)
+            st.download_button("Download PDF", create_pdf(plan), file_name="study_plan.pdf")
+
+# === Progress Tracker ===
+elif menu == "Progress Tracker":
+    st.header("Your Progress")
+    progress = st.session_state.get("progress_log", [])
+    if progress:
+        for entry in progress:
+            st.markdown(f"**{entry['date']}** - {entry['topic']} — {entry['correct']}/{entry['attempted']} correct")
+        total_correct = sum(x["correct"] for x in progress)
+        total_attempted = sum(x["attempted"] for x in progress)
+        if total_attempted > 0:
+            accuracy = (total_correct / total_attempted) * 100
+            st.metric("Total Accuracy", f"{accuracy:.1f}%")
+    else:
+        st.info("No progress saved yet.")
+
+
 def save_score(user_id, topic, correct, attempted):
     if "progress_log" not in st.session_state:
         st.session_state["progress_log"] = []
@@ -134,4 +178,29 @@ elif menu == "Practice Quiz":
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            questions = quiz_text.strip().split("\n\n")
+            questions = quiz_text.strip().split("
+
+")
+            st.session_state["quiz_data"] = questions
+            st.session_state["quiz_answers"] = {}
+
+    if "quiz_data" in st.session_state:
+        st.subheader("Take the Quiz")
+        for idx, q in enumerate(st.session_state["quiz_data"]):
+            if not q.strip():
+                continue
+            parts = q.split("
+")
+            question_text = parts[0]
+            options = parts[1:]
+            selected = st.radio(question_text, options, key=f"q_{idx}")
+            st.session_state["quiz_answers"][idx] = selected
+
+        if st.button("Submit Quiz"):
+            attempted = len(st.session_state["quiz_data"])
+            correct_answers = 0
+            save_score(user["id"], topic, correct_answers, attempted)
+            st.success("Quiz submitted! Your score has been recorded.")
+            del st.session_state["quiz_data"]
+            del st.session_state["quiz_answers"]
+
