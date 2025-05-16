@@ -135,5 +135,3 @@ elif menu == "Practice Quiz":
                 {"role": "user", "content": prompt}
             ])
             questions = quiz_text.strip().split("\n\n")
-
-")
