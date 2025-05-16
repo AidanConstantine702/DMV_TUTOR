@@ -180,7 +180,6 @@ elif menu == "Practice Quiz":
             ])
             questions = quiz_text.strip().split("\n\n")
 
-")
             st.session_state["quiz_data"] = questions
             st.session_state["quiz_answers"] = {}
 
