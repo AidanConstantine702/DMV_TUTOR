@@ -79,6 +79,74 @@ def save_score(user_id, topic, correct, attempted):
         "date": str(datetime.date.today())
     })
 
+# === App Setup ===
+st.set_page_config(page_title="SC DMV AI Tutor", layout="centered")
+st.title("SC DMV Permit Test Tutor")
+
+login_placeholder()
+user = st.session_state["user"]
+
+menu = st.sidebar.radio("Navigation", ["Tutor Chat", "Practice Quiz", "Flashcards", "Study Plan", "Progress Tracker"])
+
+# === Tutor Chat ===
+if menu == "Tutor Chat":
+    st.header("Chat with Your DMV Tutor")
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = [
+            {"role": "system", "content": SYSTEM_PROMPT}
+        ]
+    for msg in st.session_state.chat_history[1:]:
+        st.chat_message(msg["role"]).write(msg["content"])
+    user_input = st.chat_input("Ask a question about the permit test...")
+    if user_input:
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
+        with st.spinner("Thinking..."):
+            response = query_gpt(st.session_state.chat_history)
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
+        st.chat_message("user").write(user_input)
+        st.chat_message("assistant").write(response)
+    if st.button("Clear Chat"):
+        st.session_state.chat_history = [
+            {"role": "system", "content": SYSTEM_PROMPT}
+        ]
+        st.rerun()
+
+# === Practice Quiz ===
+elif menu == "Practice Quiz":
+    st.header("Practice Quiz")
+    num = st.slider("Number of Questions", 5, 10, 5)
+    topic = st.text_input("Topic (optional)", "General")
+    if st.button("Generate Quiz"):
+        prompt = (
+            f"Generate a {num}-question multiple choice quiz based on the SC permit test. "
+            f"Each question should have a question and 4 choices labeled A-D. Do not mark the correct answer."
+        )
+        with st.spinner("Creating your quiz..."):
+            quiz_text = query_gpt([
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ])
+            questions = quiz_text.strip().split("\n\n")
+            st.session_state["quiz_data"] = questions
+            st.session_state["quiz_answers"] = {}
+    if "quiz_data" in st.session_state:
+        st.subheader("Take the Quiz")
+        for idx, q in enumerate(st.session_state["quiz_data"]):
+            if not q.strip():
+                continue
+            parts = q.split("\n")
+            question_text = parts[0]
+            options = parts[1:]
+            selected = st.radio(question_text, options, key=f"q_{idx}")
+            st.session_state["quiz_answers"][idx] = selected
+        if st.button("Submit Quiz"):
+            attempted = len(st.session_state["quiz_data"])
+            correct_answers = 0
+            save_score(user["id"], topic, correct_answers, attempted)
+            st.success("Quiz submitted! Your score has been recorded.")
+            del st.session_state["quiz_data"]
+            del st.session_state["quiz_answers"]
+
 # === Flashcards ===
 elif menu == "Flashcards":
     st.header("Flashcards")
@@ -120,96 +188,3 @@ elif menu == "Progress Tracker":
             st.metric("Total Accuracy", f"{accuracy:.1f}%")
     else:
         st.info("No progress saved yet.")
-
-
-def save_score(user_id, topic, correct, attempted):
-    if "progress_log" not in st.session_state:
-        st.session_state["progress_log"] = []
-    st.session_state["progress_log"].append({
-        "user_id": user_id,
-        "topic": topic,
-        "correct": correct,
-        "attempted": attempted,
-        "date": str(datetime.date.today())
-    })
-
-# === App Setup ===
-st.set_page_config(page_title="SC DMV AI Tutor", layout="centered")
-st.title("SC DMV Permit Test Tutor")
-
-login_placeholder()
-user = st.session_state["user"]
-
-menu = st.sidebar.radio("Navigation", ["Tutor Chat", "Practice Quiz", "Flashcards", "Study Plan", "Progress Tracker"])
-
-# === Tutor Chat ===
-if menu == "Tutor Chat":
-    st.header("Chat with Your DMV Tutor")
-
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [
-            {"role": "system", "content": SYSTEM_PROMPT}
-        ]
-
-    for msg in st.session_state.chat_history[1:]:
-        if msg["role"] == "user":
-            st.chat_message("user").write(msg["content"])
-        else:
-            st.chat_message("assistant").write(msg["content"])
-
-    user_input = st.chat_input("Ask a question about the permit test...")
-    if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        with st.spinner("Thinking..."):
-            response = query_gpt(st.session_state.chat_history)
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
-        st.chat_message("user").write(user_input)
-        st.chat_message("assistant").write(response)
-
-    if st.button("Clear Chat"):
-        st.session_state.chat_history = [
-            {"role": "system", "content": SYSTEM_PROMPT}
-        ]
-        st.rerun()
-
-# === Practice Quiz ===
-elif menu == "Practice Quiz":
-    st.header("Practice Quiz")
-    num = st.slider("Number of Questions", 5, 10, 5)
-    topic = st.text_input("Topic (optional)", "General")
-
-    if st.button("Generate Quiz"):
-        prompt = (
-            f"Generate a {num}-question multiple choice quiz based on the SC permit test. "
-            f"Each question should have a question and 4 choices labeled A-D. Do not mark the correct answer."
-        )
-        with st.spinner("Creating your quiz..."):
-            quiz_text = query_gpt([
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ])
-            questions = quiz_text.strip().split("\n\n")
-
-            st.session_state["quiz_data"] = questions
-            st.session_state["quiz_answers"] = {}
-
-    if "quiz_data" in st.session_state:
-        st.subheader("Take the Quiz")
-        for idx, q in enumerate(st.session_state["quiz_data"]):
-            if not q.strip():
-                continue
-            parts = q.split("\n")
-            
-            question_text = parts[0]
-            options = parts[1:]
-            selected = st.radio(question_text, options, key=f"q_{idx}")
-            st.session_state["quiz_answers"][idx] = selected
-
-        if st.button("Submit Quiz"):
-            attempted = len(st.session_state["quiz_data"])
-            correct_answers = 0
-            save_score(user["id"], topic, correct_answers, attempted)
-            st.success("Quiz submitted! Your score has been recorded.")
-            del st.session_state["quiz_data"]
-            del st.session_state["quiz_answers"]
-
