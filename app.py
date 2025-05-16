@@ -188,8 +188,8 @@ elif menu == "Practice Quiz":
         for idx, q in enumerate(st.session_state["quiz_data"]):
             if not q.strip():
                 continue
-            parts = q.split("
-")
+            parts = q.split("\n")
+            
             question_text = parts[0]
             options = parts[1:]
             selected = st.radio(question_text, options, key=f"q_{idx}")
