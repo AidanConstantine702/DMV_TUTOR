@@ -7,7 +7,10 @@ import datetime
 
 # === Load OpenAI API key ===
 api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
+client = OpenAI(
+    api_key=api_key,
+    project="proj_AN8EAH-vGzoYlqgl71xf1qdt4G4X5ENcjRbFTfqwrUeo8krRC9y38FrEFnVZeWxY"
+)
 
 # === Enhanced System Prompt ===
 SYSTEM_PROMPT = (
@@ -170,3 +173,4 @@ elif menu == "Progress Tracker":
             st.metric("Total Accuracy", f"{accuracy:.1f}%")
     else:
         st.info("No progress saved yet.")
+
