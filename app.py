@@ -68,6 +68,16 @@ def login_placeholder():
         st.session_state["progress_log"] = []
 
 # === Save Quiz Score ===
+def save_score(user_id, topic, correct, attempted):
+    if "progress_log" not in st.session_state:
+        st.session_state["progress_log"] = []
+    st.session_state["progress_log"].append({
+        "user_id": user_id,
+        "topic": topic,
+        "correct": correct,
+        "attempted": attempted,
+        "date": str(datetime.date.today())
+    })
 
 # === Flashcards ===
 elif menu == "Flashcards":
