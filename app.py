@@ -134,7 +134,7 @@ elif menu == "Practice Quiz":
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            questions = quiz_text.strip().split("
+            questions = quiz_text.strip().split("\n\n")
 
 ")
             st.session_state["quiz_data"] = questions
