@@ -4,6 +4,7 @@ import os
 from reportlab.pdfgen import canvas
 from io import BytesIO
 import datetime
+import re
 
 # === Load OpenAI API key ===
 api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
@@ -14,24 +15,15 @@ client = OpenAI(
 
 # === Enhanced System Prompt ===
 SYSTEM_PROMPT = (
-    "You are a certified South Carolina DMV Permit Test Tutor specializing in helping teenagers "
-    "prepare for their written learner’s permit exam.\n\n"
-    "Your job is to clearly explain driving laws, road signs, traffic rules, and safety principles "
-    "using only the information found in:\n"
-    "- The South Carolina Driver’s Manual (2024 edition), and\n"
-    "- The official SC DMV Practice Test: https://practice.dmv-test-pro.com/south-carolina/sc-permit-practice-test-19/\n\n"
-    "Your audience is 15- to 17-year-old students. Always speak in an encouraging, friendly tone. "
-    "Break down complex topics into simple, relatable language.\n\n"
-    "Key instructions:\n"
-    "- Only provide information verified in the Driver’s Manual or Practice Test.\n"
-    "- Do not make up laws, facts, or statistics.\n"
-    "- Use examples that relate to real-world driving in South Carolina.\n"
-    "- Format responses using short paragraphs, numbered lists, or bold labels when helpful.\n"
-    "- If a user asks for a quiz or flashcards, format the response accordingly (MCQs or Q&A).\n"
-    "- If a user gives a score (e.g., 'I got 6/10'), give personalized encouragement and advice on what to review.\n\n"
-    "If asked something outside the DMV content (e.g., “How do I get a job?”), politely say:\n"
-    "**“I’m here to help you study for the South Carolina permit test. Try asking me about road rules, signs, or safe driving!”**\n\n"
-    "Stay focused, accurate, and friendly — your goal is to help students feel confident and ready for their exam."
+    "You are a certified South Carolina DMV Permit Test Tutor. Generate quizzes that follow this format strictly:"
+    "\n\nEach question must be structured as:"
+    "\nQuestion X: [question text]"
+    "\nA. [option A]"
+    "\nB. [option B]"
+    "\nC. [option C]"
+    "\nD. [option D]"
+    "\nAnswer: [letter]"
+    "\n\nReturn exactly [N] questions with only one correct answer each and no explanations."
 )
 
 # === GPT Query Function ===
@@ -79,6 +71,23 @@ def save_score(user_id, topic, correct, attempted):
         "date": str(datetime.date.today())
     })
 
+# === Parse Quiz Format ===
+def parse_quiz(raw_text):
+    questions = []
+    chunks = raw_text.strip().split("\n\n")
+    for chunk in chunks:
+        lines = chunk.strip().split("\n")
+        if len(lines) >= 6:
+            question = lines[0].split(":", 1)[-1].strip()
+            options = {line[0]: line[3:].strip() for line in lines[1:5]}
+            correct = lines[5].split(":", 1)[-1].strip().upper()
+            questions.append({
+                "question": question,
+                "options": options,
+                "answer": correct
+            })
+    return questions
+
 # === App Setup ===
 st.set_page_config(page_title="SC DMV AI Tutor", layout="centered")
 st.title("SC DMV Permit Test Tutor")
@@ -117,48 +126,39 @@ elif menu == "Practice Quiz":
     num = st.slider("Number of Questions", 5, 10, 5)
     topic = st.text_input("Topic (optional)", "General")
     if st.button("Generate Quiz"):
-        prompt = (
-            f"Generate a {num}-question multiple choice quiz based on the SC permit test. "
-            f"Each question should have a question and 4 choices labeled A-D. At the end, include the correct answer for each question in a format like 'Answer 1: B'."
-        )
+        prompt = f"Generate a {num}-question multiple choice quiz based on the SC permit test."
         with st.spinner("Creating your quiz..."):
-            quiz_text = query_gpt([
+            raw_quiz = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            question_blocks = quiz_text.strip().split("\n\n")
-            questions = []
-            answers = []
-            for block in question_blocks:
-                if block.lower().startswith("answer"):
-                    answers.append(block)
-                else:
-                    questions.append(block)
-            st.session_state["quiz_data"] = questions
+            quiz_data = parse_quiz(raw_quiz)
+            st.session_state["quiz_data"] = quiz_data
             st.session_state["quiz_answers"] = {}
-            st.session_state["correct_keys"] = answers
+            st.session_state["quiz_submitted"] = False
 
     if "quiz_data" in st.session_state:
         st.subheader("Take the Quiz")
         for idx, q in enumerate(st.session_state["quiz_data"]):
-            if not q.strip():
-                continue
-            parts = q.split("\n")
-            question_text = parts[0]
-            options = parts[1:]
-            selected = st.radio(question_text, options, key=f"q_{idx}")
-            st.session_state["quiz_answers"][idx] = selected
+            selected = st.radio(
+                f"{idx+1}. {q['question']}",
+                [f"{key}. {val}" for key, val in q["options"].items()],
+                key=f"q_{idx}"
+            )
+            st.session_state["quiz_answers"][idx] = selected[0]
 
-        if st.button("Submit Quiz"):
-            attempted = len(st.session_state["quiz_data"])
-            correct_answers = 0  # not used for grading here
-            save_score(user["id"], topic, correct_answers, attempted)
-            st.success("Quiz submitted! Review your correct answers below:")
-            for line in st.session_state["correct_keys"]:
-                st.markdown(f"- {line}")
-            del st.session_state["quiz_data"]
-            del st.session_state["quiz_answers"]
-            del st.session_state["correct_keys"]
+        if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
+            st.session_state["quiz_submitted"] = True
+            correct_answers = 0
+            for idx, q in enumerate(st.session_state["quiz_data"]):
+                if st.session_state["quiz_answers"].get(idx) == q["answer"]:
+                    correct_answers += 1
+            save_score(user["id"], topic, correct_answers, len(st.session_state["quiz_data"]))
+            st.success(f"You got {correct_answers} out of {len(st.session_state['quiz_data'])} correct!")
+
+            st.markdown("**Correct Answers:**")
+            for i, q in enumerate(st.session_state["quiz_data"]):
+                st.markdown(f"- Question {i+1}: {q['answer']}")
 
 # === Flashcards ===
 elif menu == "Flashcards":
