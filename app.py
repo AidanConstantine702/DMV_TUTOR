@@ -119,16 +119,25 @@ elif menu == "Practice Quiz":
     if st.button("Generate Quiz"):
         prompt = (
             f"Generate a {num}-question multiple choice quiz based on the SC permit test. "
-            f"Each question should have a question and 4 choices labeled A-D. Do not mark the correct answer."
+            f"Each question should have a question and 4 choices labeled A-D. At the end, include the correct answer for each question in a format like 'Answer 1: B'."
         )
         with st.spinner("Creating your quiz..."):
             quiz_text = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            questions = quiz_text.strip().split("\n\n")
+            question_blocks = quiz_text.strip().split("\n\n")
+            questions = []
+            answers = []
+            for block in question_blocks:
+                if block.lower().startswith("answer"):
+                    answers.append(block)
+                else:
+                    questions.append(block)
             st.session_state["quiz_data"] = questions
             st.session_state["quiz_answers"] = {}
+            st.session_state["correct_keys"] = answers
+
     if "quiz_data" in st.session_state:
         st.subheader("Take the Quiz")
         for idx, q in enumerate(st.session_state["quiz_data"]):
@@ -139,13 +148,17 @@ elif menu == "Practice Quiz":
             options = parts[1:]
             selected = st.radio(question_text, options, key=f"q_{idx}")
             st.session_state["quiz_answers"][idx] = selected
+
         if st.button("Submit Quiz"):
             attempted = len(st.session_state["quiz_data"])
-            correct_answers = 0
+            correct_answers = 0  # not used for grading here
             save_score(user["id"], topic, correct_answers, attempted)
-            st.success("Quiz submitted! Your score has been recorded.")
+            st.success("Quiz submitted! Review your correct answers below:")
+            for line in st.session_state["correct_keys"]:
+                st.markdown(f"- {line}")
             del st.session_state["quiz_data"]
             del st.session_state["quiz_answers"]
+            del st.session_state["correct_keys"]
 
 # === Flashcards ===
 elif menu == "Flashcards":
