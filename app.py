@@ -170,10 +170,14 @@ if menu == "Tutor Chat":
 elif menu == "Practice Quiz":
     st.header("Practice Quiz")
     num = st.slider("Number of Questions", 5, 10, 5)
-    topic = st.text_input("Topic (optional)", "General")
+    topic = st.selectbox(
+        "Topic",
+        ["General", "Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"]
+    )
     if st.button("Generate Quiz"):
+        topic_prompt = f" on the topic of {topic}" if topic != "General" else ""
         prompt = (
-            f"Generate exactly {num} multiple-choice questions for the South Carolina DMV permit test. "
+            f"Generate exactly {num} multiple-choice questions for the South Carolina DMV permit test{topic_prompt}. "
             "Each must follow this format:\n"
             "Question 1: [question]\n"
             "A. [option A]\n"
