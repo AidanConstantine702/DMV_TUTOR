@@ -74,14 +74,15 @@ def login_ui():
     st.subheader("Login / Sign Up")
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
-    if st.button("Log In"):
-        try:
-            user = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if user.user:
-                st.session_state["user"] = user.user
-                st.success("Logged in successfully!")
-        except Exception as e:
-            st.error("Login failed. Check your email or password.")
+   if st.button("Log In"):
+    try:
+        user = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        if user.user:
+            st.session_state["user"] = user.user
+            st.success("Logged in successfully!")
+            st.rerun()  # <- This forces Streamlit to re-run and move past the login screen
+    except Exception as e:
+        st.error("Login failed. Check your email or password.")
     if st.button("Sign Up"):
         try:
             result = supabase.auth.sign_up({"email": email, "password": password})
