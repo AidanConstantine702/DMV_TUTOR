@@ -52,19 +52,23 @@ def query_gpt(messages):
 
 # === Parse quiz from GPT format ===
 def parse_quiz(raw_text):
-    pattern = r"Question (\d+): (.*?)\nA\. (.*?)\nB\. (.*?)\nC\. (.*?)\nD\. (.*?)\nAnswer: (.*?)\n"
-    matches = re.findall(pattern, raw_text, re.DOTALL)
+    pattern = re.compile(
+        r"Question\s+\d+:\s*(.*?)\nA\.\s*(.*?)\nB\.\s*(.*?)\nC\.\s*(.*?)\nD\.\s*(.*?)\nAnswer:\s*([A-D])",
+        re.DOTALL
+    )
+    matches = pattern.findall(raw_text)
     questions = []
     for match in matches:
+        question, a, b, c, d, answer = match
         questions.append({
-            "question": match[1].strip(),
+            "question": question.strip(),
             "options": {
-                "A": match[2].strip(),
-                "B": match[3].strip(),
-                "C": match[4].strip(),
-                "D": match[5].strip(),
+                "A": a.strip(),
+                "B": b.strip(),
+                "C": c.strip(),
+                "D": d.strip()
             },
-            "answer": match[6].strip().upper()
+            "answer": answer.strip()
         })
     return questions
 
