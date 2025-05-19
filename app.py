@@ -174,13 +174,13 @@ elif menu == "Practice Quiz":
             st.session_state["quiz_submitted"] = False
 
     if "quiz_data" in st.session_state:
-        st.subheader("Take the Quiz")
-        for idx, q in enumerate(st.session_state["quiz_data"]):
-            selected = st.radio(
-                f"{idx+1}. {q['question']}",
-                [f"{key}. {val}" for key, val in q["options"].items()],
-                key=f"q_{idx}"
-            )
+    st.subheader("Take the Quiz")
+    for idx, q in enumerate(st.session_state["quiz_data"]):
+        question_label = f"{idx+1}. {q['question']}"
+        options = [f"{key}. {val}" for key, val in q["options"].items()]
+        selected = st.radio(question_label, options, key=f"q_{idx}")
+        st.session_state["quiz_answers"][idx] = selected[0]
+
             st.session_state["quiz_answers"][idx] = selected[0]
 
         if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
