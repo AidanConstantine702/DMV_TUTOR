@@ -35,7 +35,7 @@ SYSTEM_PROMPT = (
     "C. [option C]\n"
     "D. [option D]\n"
     "Answer: [A/B/C/D]\n\n"
-    "- Start each question with 'Question [number]:'\n"
+    "- Start each question with 'Question [number]:'.\n"
     "- Return EXACTLY N questions in the specified format.\n"
     "- DO NOT include explanations, hints, or any extra text.\n"
     "- Make sure all questions are unique and properly numbered.\n\n"
@@ -71,6 +71,19 @@ def parse_quiz(raw_text):
             "answer": answer.strip()
         })
     return questions
+
+# === Parse Q&A flashcards ===
+def parse_flashcards(raw_text):
+    cards = []
+    # Split on Q: but keep Q: in each segment
+    segments = re.split(r'\n(?=Q: )', raw_text.strip())
+    for seg in segments:
+        q_match = re.match(r"Q:\s*(.*?)\nA:\s*(.*)", seg.strip(), re.DOTALL)
+        if q_match:
+            question = q_match.group(1).strip()
+            answer = q_match.group(2).strip()
+            cards.append({"question": question, "answer": answer})
+    return cards
 
 # === Create PDF ===
 def create_pdf(text):
@@ -160,17 +173,17 @@ elif menu == "Practice Quiz":
     topic = st.text_input("Topic (optional)", "General")
     if st.button("Generate Quiz"):
         prompt = (
-    f"Generate exactly {num} multiple-choice questions for the South Carolina DMV permit test. "
-    "Each must follow this format:\n"
-    "Question 1: [question]\n"
-    "A. [option A]\n"
-    "B. [option B]\n"
-    "C. [option C]\n"
-    "D. [option D]\n"
-    "Answer: [correct option letter]\n\n"
-    "Return ONLY the questions — no explanations, no commentary, no extra text. "
-    "Number all questions correctly and provide the correct answer for each."
-)
+            f"Generate exactly {num} multiple-choice questions for the South Carolina DMV permit test. "
+            "Each must follow this format:\n"
+            "Question 1: [question]\n"
+            "A. [option A]\n"
+            "B. [option B]\n"
+            "C. [option C]\n"
+            "D. [option D]\n"
+            "Answer: [correct option letter]\n\n"
+            "Return ONLY the questions — no explanations, no commentary, no extra text. "
+            "Number all questions correctly and provide the correct answer for each."
+        )
         with st.spinner("Creating your quiz..."):
             raw_quiz = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -205,14 +218,25 @@ elif menu == "Flashcards":
     st.header("Flashcards")
     topic = st.selectbox("Topic", ["Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"])
     if st.button("Generate Flashcards"):
-        prompt = f"Generate 10 flashcards for '{topic}' using Q&A format only from the SC permit test."
+        prompt = (
+            f"Generate 10 flashcards for '{topic}' based ONLY on the South Carolina permit test. "
+            "Each flashcard should be in this format:\n"
+            "Q: [question]\n"
+            "A: [short, direct answer]\n"
+            "Return only the flashcards. Do not use multiple choice or explanations. No extra text."
+        )
         with st.spinner("Creating flashcards..."):
-            flashcards = query_gpt([
+            raw = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            st.markdown(flashcards)
-            st.download_button("Download PDF", create_pdf(flashcards), file_name="flashcards.pdf")
+            cards = parse_flashcards(raw)
+            if cards:
+                for idx, card in enumerate(cards):
+                    st.markdown(f"**Q{idx+1}: {card['question']}**  \n*A: {card['answer']}*")
+                st.download_button("Download PDF", create_pdf(raw), file_name="flashcards.pdf")
+            else:
+                st.warning("Could not parse flashcards. Try again.")
 
 # === Study Plan ===
 elif menu == "Study Plan":
