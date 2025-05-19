@@ -7,19 +7,16 @@ import datetime
 import re
 from supabase import create_client, Client
 
-# === Supabase Initialization ===
+# === Load credentials from secrets.toml ===
 supabase_url = st.secrets["supabase"]["url"]
 supabase_key = st.secrets["supabase"]["key"]
+api_key = st.secrets["openai_api_key"]
+
+# === Initialize Supabase and OpenAI ===
 supabase: Client = create_client(supabase_url, supabase_key)
+client = OpenAI(api_key=api_key, project="proj_36JJwFCLQG34Xyiqb0EWUJlN")
 
-# === Load OpenAI API key ===
-api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
-client = OpenAI(
-    api_key=api_key,
-    project="proj_36JJwFCLQG34Xyiqb0EWUJlN"
-)
-
-# === Enhanced System Prompt ===
+# === System Prompt ===
 SYSTEM_PROMPT = (
     "You are a certified South Carolina DMV Permit Test Tutor specializing in helping teenagers "
     "prepare for their written learner’s permit exam.\n\n"
