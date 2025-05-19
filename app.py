@@ -173,7 +173,7 @@ elif menu == "Practice Quiz":
             st.session_state["quiz_answers"] = {}
             st.session_state["quiz_submitted"] = False
 
-    if "quiz_data" in st.session_state:
+   if "quiz_data" in st.session_state:
     st.subheader("Take the Quiz")
     for idx, q in enumerate(st.session_state["quiz_data"]):
         question_label = f"{idx+1}. {q['question']}"
@@ -181,20 +181,18 @@ elif menu == "Practice Quiz":
         selected = st.radio(question_label, options, key=f"q_{idx}")
         st.session_state["quiz_answers"][idx] = selected[0]
 
-            st.session_state["quiz_answers"][idx] = selected[0]
+    if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
+        st.session_state["quiz_submitted"] = True
+        correct_answers = 0
+        for idx, q in enumerate(st.session_state["quiz_data"]):
+            if st.session_state["quiz_answers"].get(idx) == q["answer"]:
+                correct_answers += 1
+        save_score(user.id, topic, correct_answers, len(st.session_state["quiz_data"]))
+        st.success(f"You got {correct_answers} out of {len(st.session_state['quiz_data'])} correct!")
 
-        if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
-            st.session_state["quiz_submitted"] = True
-            correct_answers = 0
-            for idx, q in enumerate(st.session_state["quiz_data"]):
-                if st.session_state["quiz_answers"].get(idx) == q["answer"]:
-                    correct_answers += 1
-            save_score(user.id, topic, correct_answers, len(st.session_state["quiz_data"]))
-            st.success(f"You got {correct_answers} out of {len(st.session_state['quiz_data'])} correct!")
-
-            st.markdown("**Correct Answers:**")
-            for i, q in enumerate(st.session_state["quiz_data"]):
-                st.markdown(f"- Question {i+1}: {q['answer']}")
+        st.markdown("**Correct Answers:**")
+        for i, q in enumerate(st.session_state["quiz_data"]):
+            st.markdown(f"- Question {i+1}: {q['answer']}")
 
 # === Flashcards ===
 elif menu == "Flashcards":
