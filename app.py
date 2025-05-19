@@ -5,6 +5,12 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 import datetime
 import re
+from supabase import create_client, Client
+
+# === Supabase Initialization ===
+supabase_url = st.secrets["supabase"]["url"]
+supabase_key = st.secrets["supabase"]["key"]
+supabase: Client = create_client(supabase_url, supabase_key)
 
 # === Load OpenAI API key ===
 api_key = st.secrets.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
@@ -16,29 +22,29 @@ client = OpenAI(
 # === Enhanced System Prompt ===
 SYSTEM_PROMPT = (
     "You are a certified South Carolina DMV Permit Test Tutor specializing in helping teenagers "
-    "prepare for their written learner’s permit exam.\\n\\n"
+    "prepare for their written learner’s permit exam.\n\n"
     "Your job is to clearly explain driving laws, road signs, traffic rules, and safety principles "
-    "using only the information found in:\\n"
-    "- The South Carolina Driver’s Manual (2024 edition), and\\n"
-    "- The official SC DMV Practice Test: https://practice.dmv-test-pro.com/south-carolina/sc-permit-practice-test-19/\\n\\n"
+    "using only the information found in:\n"
+    "- The South Carolina Driver’s Manual (2024 edition), and\n"
+    "- The official SC DMV Practice Test: https://practice.dmv-test-pro.com/south-carolina/sc-permit-practice-test-19/\n\n"
     "Your audience is 15- to 17-year-old students. Always speak in an encouraging, friendly tone. "
-    "Break down complex topics into simple, relatable language.\\n\\n"
-    "Key instructions:\\n"
-    "- Only provide information verified in the Driver’s Manual or Practice Test.\\n"
-    "- Do not make up laws, facts, or statistics.\\n"
-    "- Use examples that relate to real-world driving in South Carolina.\\n"
-    "- Format responses using short paragraphs, numbered lists, or bold labels when helpful.\\n"
-    "- If a user asks for a quiz or flashcards, format the response accordingly.\\n"
-    "For quizzes, follow this format strictly:\\n"
-    "Question 1: [question text]\\n"
-    "A. [option A]\\n"
-    "B. [option B]\\n"
-    "C. [option C]\\n"
-    "D. [option D]\\n"
-    "Answer: [Correct letter]\\n\\n"
-    "Return exactly N questions, no explanations.\\n\\n"
-    "If a user gives a score (e.g., 'I got 6/10'), give personalized encouragement and advice on what to review.\\n\\n"
-    "If asked something outside the DMV content, say:\\n"
+    "Break down complex topics into simple, relatable language.\n\n"
+    "Key instructions:\n"
+    "- Only provide information verified in the Driver’s Manual or Practice Test.\n"
+    "- Do not make up laws, facts, or statistics.\n"
+    "- Use examples that relate to real-world driving in South Carolina.\n"
+    "- Format responses using short paragraphs, numbered lists, or bold labels when helpful.\n"
+    "- If a user asks for a quiz or flashcards, format the response accordingly.\n"
+    "For quizzes, follow this format strictly:\n"
+    "Question 1: [question text]\n"
+    "A. [option A]\n"
+    "B. [option B]\n"
+    "C. [option C]\n"
+    "D. [option D]\n"
+    "Answer: [Correct letter]\n\n"
+    "Return exactly N questions, no explanations.\n\n"
+    "If a user gives a score (e.g., 'I got 6/10'), give personalized encouragement and advice on what to review.\n\n"
+    "If asked something outside the DMV content, say:\n"
     "**'I’m here to help you study for the South Carolina permit test. Try asking me about road rules, signs, or safe driving!'**"
 )
 
@@ -66,26 +72,37 @@ def create_pdf(text):
     buffer.seek(0)
     return buffer
 
-# === Simulated User Session ===
-def login_placeholder():
-    if "user" not in st.session_state:
-        st.session_state["user"] = {
-            "id": "demo_user",
-            "email": "demo@example.com"
-        }
-        st.session_state["progress_log"] = []
+# === Login UI ===
+def login_ui():
+    st.subheader("Login / Sign Up")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    if st.button("Log In"):
+        try:
+            user = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if user.user:
+                st.session_state["user"] = user.user
+                st.success("Logged in successfully!")
+        except Exception as e:
+            st.error("Login failed. Check your email or password.")
+    if st.button("Sign Up"):
+        try:
+            result = supabase.auth.sign_up({"email": email, "password": password})
+            if result.user:
+                st.success("Account created! Please check your email to confirm.")
+        except Exception as e:
+            st.error("Signup failed. Email may already be registered.")
 
 # === Save Quiz Score ===
 def save_score(user_id, topic, correct, attempted):
-    if "progress_log" not in st.session_state:
-        st.session_state["progress_log"] = []
-    st.session_state["progress_log"].append({
+    data = {
         "user_id": user_id,
         "topic": topic,
         "correct": correct,
         "attempted": attempted,
         "date": str(datetime.date.today())
-    })
+    }
+    supabase.table("quiz_scores").insert(data).execute()
 
 # === Parse Quiz Format ===
 def parse_quiz(raw_text):
@@ -108,7 +125,10 @@ def parse_quiz(raw_text):
 st.set_page_config(page_title="SC DMV AI Tutor", layout="centered")
 st.title("SC DMV Permit Test Tutor")
 
-login_placeholder()
+if "user" not in st.session_state:
+    login_ui()
+    st.stop()
+
 user = st.session_state["user"]
 
 menu = st.sidebar.radio("Navigation", ["Tutor Chat", "Practice Quiz", "Flashcards", "Study Plan", "Progress Tracker"])
@@ -169,7 +189,7 @@ elif menu == "Practice Quiz":
             for idx, q in enumerate(st.session_state["quiz_data"]):
                 if st.session_state["quiz_answers"].get(idx) == q["answer"]:
                     correct_answers += 1
-            save_score(user["id"], topic, correct_answers, len(st.session_state["quiz_data"]))
+            save_score(user.id, topic, correct_answers, len(st.session_state["quiz_data"]))
             st.success(f"You got {correct_answers} out of {len(st.session_state['quiz_data'])} correct!")
 
             st.markdown("**Correct Answers:**")
@@ -206,7 +226,9 @@ elif menu == "Study Plan":
 # === Progress Tracker ===
 elif menu == "Progress Tracker":
     st.header("Your Progress")
-    progress = st.session_state.get("progress_log", [])
+    user_id = user.id
+    response = supabase.table("quiz_scores").select("*").eq("user_id", user_id).execute()
+    progress = response.data if response else []
     if progress:
         for entry in progress:
             st.markdown(f"**{entry['date']}** - {entry['topic']} — {entry['correct']}/{entry['attempted']} correct")
