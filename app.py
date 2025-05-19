@@ -161,6 +161,7 @@ elif menu == "Practice Quiz":
     st.header("Practice Quiz")
     num = st.slider("Number of Questions", 5, 10, 5)
     topic = st.text_input("Topic (optional)", "General")
+
     if st.button("Generate Quiz"):
         prompt = f"Generate a {num}-question multiple choice quiz based on the SC permit test."
         with st.spinner("Creating your quiz..."):
@@ -173,26 +174,26 @@ elif menu == "Practice Quiz":
             st.session_state["quiz_answers"] = {}
             st.session_state["quiz_submitted"] = False
 
-   if "quiz_data" in st.session_state:
-    st.subheader("Take the Quiz")
-    for idx, q in enumerate(st.session_state["quiz_data"]):
-        question_label = f"{idx+1}. {q['question']}"
-        options = [f"{key}. {val}" for key, val in q["options"].items()]
-        selected = st.radio(question_label, options, key=f"q_{idx}")
-        st.session_state["quiz_answers"][idx] = selected[0]
-
-    if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
-        st.session_state["quiz_submitted"] = True
-        correct_answers = 0
+    if "quiz_data" in st.session_state:
+        st.subheader("Take the Quiz")
         for idx, q in enumerate(st.session_state["quiz_data"]):
-            if st.session_state["quiz_answers"].get(idx) == q["answer"]:
-                correct_answers += 1
-        save_score(user.id, topic, correct_answers, len(st.session_state["quiz_data"]))
-        st.success(f"You got {correct_answers} out of {len(st.session_state['quiz_data'])} correct!")
+            question_label = f"{idx+1}. {q['question']}"
+            options = [f"{key}. {val}" for key, val in q["options"].items()]
+            selected = st.radio(question_label, options, key=f"q_{idx}")
+            st.session_state["quiz_answers"][idx] = selected[0]
 
-        st.markdown("**Correct Answers:**")
-        for i, q in enumerate(st.session_state["quiz_data"]):
-            st.markdown(f"- Question {i+1}: {q['answer']}")
+        if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
+            st.session_state["quiz_submitted"] = True
+            correct_answers = 0
+            for idx, q in enumerate(st.session_state["quiz_data"]):
+                if st.session_state["quiz_answers"].get(idx) == q["answer"]:
+                    correct_answers += 1
+            save_score(user.id, topic, correct_answers, len(st.session_state["quiz_data"]))
+            st.success(f"You got {correct_answers} out of {len(st.session_state['quiz_data'])} correct!")
+
+            st.markdown("**Correct Answers:**")
+            for i, q in enumerate(st.session_state["quiz_data"]):
+                st.markdown(f"- Question {i+1}: {q['answer']}")
 
 # === Flashcards ===
 elif menu == "Flashcards":
