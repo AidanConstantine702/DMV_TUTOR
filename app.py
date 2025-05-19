@@ -25,17 +25,21 @@ SYSTEM_PROMPT = (
     "- The South Carolina Driver’s Manual (2024 edition), and\n"
     "- The official SC DMV Practice Test: https://practice.dmv-test-pro.com/south-carolina/sc-permit-practice-test-19/\n\n"
     "Key instructions:\n"
-    "- Only provide information verified in the Driver’s Manual or Practice Test.\n"
-    "- Do not make up laws, facts, or statistics.\n"
-    "- Use examples that relate to real-world driving in South Carolina.\n"
-    "- For quizzes, follow this format strictly:\n"
+    "- ONLY use facts found in the manual or practice test.\n"
+    "- DO NOT make up laws, facts, or explanations.\n"
+    "- Use language appropriate for 15- to 17-year-olds.\n"
+    "- When creating a quiz, strictly follow this format:\n"
     "Question 1: [question text]\n"
     "A. [option A]\n"
     "B. [option B]\n"
     "C. [option C]\n"
     "D. [option D]\n"
-    "Answer: [Correct letter]\n\n"
-    "Return exactly N questions with the correct format. No explanations."
+    "Answer: [A/B/C/D]\n\n"
+    "- Start each question with 'Question [number]:'\n"
+    "- Return EXACTLY N questions in the specified format.\n"
+    "- DO NOT include explanations, hints, or any extra text.\n"
+    "- Make sure all questions are unique and properly numbered.\n\n"
+    "**Failure to follow these instructions will result in broken output.**"
 )
 
 # === Query GPT ===
@@ -151,7 +155,18 @@ elif menu == "Practice Quiz":
     num = st.slider("Number of Questions", 5, 10, 5)
     topic = st.text_input("Topic (optional)", "General")
     if st.button("Generate Quiz"):
-        prompt = f"Generate {num} multiple choice questions based on the SC permit test in the defined format."
+        prompt = (
+    f"Generate exactly {num} multiple-choice questions for the South Carolina DMV permit test. "
+    "Each must follow this format:\n"
+    "Question 1: [question]\n"
+    "A. [option A]\n"
+    "B. [option B]\n"
+    "C. [option C]\n"
+    "D. [option D]\n"
+    "Answer: [correct option letter]\n\n"
+    "Return ONLY the questions — no explanations, no commentary, no extra text. "
+    "Number all questions correctly and provide the correct answer for each."
+)
         with st.spinner("Creating your quiz..."):
             raw_quiz = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
