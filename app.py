@@ -241,7 +241,6 @@ elif menu == "Flashcards":
             ])
             flashcards_data = parse_flashcards(raw_flashcards)
             st.session_state["flashcards_data"] = flashcards_data
-            # State for reveal buttons
             st.session_state["flashcard_revealed"] = [False] * len(flashcards_data)
 
     if "flashcards_data" in st.session_state:
@@ -254,6 +253,7 @@ elif menu == "Flashcards":
             else:
                 if st.button("Reveal Answer", key=key):
                     st.session_state["flashcard_revealed"][idx] = True
+                    st.experimental_rerun()  # Forces immediate refresh to show the answer
             st.write("---")
         # Download option
         flashcard_text = "\n\n".join([f"Q{idx+1}: {c['question']}\nA{idx+1}: {c['answer']}" for idx, c in enumerate(st.session_state["flashcards_data"])])
