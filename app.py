@@ -39,6 +39,9 @@ SYSTEM_PROMPT = (
     "- Return EXACTLY N questions in the specified format.\n"
     "- DO NOT include explanations, hints, or any extra text.\n"
     "- Make sure all questions are unique and properly numbered.\n\n"
+    "- When creating flashcards, strictly follow this format:\n"
+    "Q: [question]\nA: [answer]\n"
+    "- Return exactly 10 Q/A flashcards and nothing else. No numbering, no MCQ, no explanations, no commentary.\n\n"
     "**Failure to follow these instructions will result in broken output.**"
 )
 
@@ -72,18 +75,12 @@ def parse_quiz(raw_text):
         })
     return questions
 
-# === Parse Q&A flashcards ===
+# === Parse flashcards from GPT format ===
 def parse_flashcards(raw_text):
-    cards = []
-    # Split on Q: but keep Q: in each segment
-    segments = re.split(r'\n(?=Q: )', raw_text.strip())
-    for seg in segments:
-        q_match = re.match(r"Q:\s*(.*?)\nA:\s*(.*)", seg.strip(), re.DOTALL)
-        if q_match:
-            question = q_match.group(1).strip()
-            answer = q_match.group(2).strip()
-            cards.append({"question": question, "answer": answer})
-    return cards
+    # Looks for: Q: ... \nA: ...
+    pattern = re.compile(r"Q:\s*(.*?)\nA:\s*(.*?)(?=\nQ:|\Z)", re.DOTALL)
+    cards = pattern.findall(raw_text)
+    return [{"question": q.strip(), "answer": a.strip()} for q, a in cards]
 
 # === Create PDF ===
 def create_pdf(text):
@@ -170,14 +167,10 @@ if menu == "Tutor Chat":
 elif menu == "Practice Quiz":
     st.header("Practice Quiz")
     num = st.slider("Number of Questions", 5, 10, 5)
-    topic = st.selectbox(
-        "Topic",
-        ["General", "Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"]
-    )
+    topic = st.selectbox("Quiz Topic", ["Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"])
     if st.button("Generate Quiz"):
-        topic_prompt = f" on the topic of {topic}" if topic != "General" else ""
         prompt = (
-            f"Generate exactly {num} multiple-choice questions for the South Carolina DMV permit test{topic_prompt}. "
+            f"Generate exactly {num} multiple-choice questions about '{topic}' for the South Carolina DMV permit test. "
             "Each must follow this format:\n"
             "Question 1: [question]\n"
             "A. [option A]\n"
@@ -223,24 +216,25 @@ elif menu == "Flashcards":
     topic = st.selectbox("Topic", ["Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"])
     if st.button("Generate Flashcards"):
         prompt = (
-            f"Generate 10 flashcards for '{topic}' based ONLY on the South Carolina permit test. "
-            "Each flashcard should be in this format:\n"
-            "Q: [question]\n"
-            "A: [short, direct answer]\n"
-            "Return only the flashcards. Do not use multiple choice or explanations. No extra text."
+            f"Generate 10 flashcards about {topic} for the South Carolina permit test. "
+            "Each flashcard must be in the following format:\n"
+            "Q: [question]\nA: [answer]\n"
+            "Return ONLY the 10 flashcards, no numbers, no multiple choice, no explanations, no extra commentary."
         )
         with st.spinner("Creating flashcards..."):
             raw = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            cards = parse_flashcards(raw)
-            if cards:
-                for idx, card in enumerate(cards):
-                    st.markdown(f"**Q{idx+1}: {card['question']}**  \n*A: {card['answer']}*")
-                st.download_button("Download PDF", create_pdf(raw), file_name="flashcards.pdf")
-            else:
+            flashcards = parse_flashcards(raw)
+            if not flashcards:
                 st.warning("Could not parse flashcards. Try again.")
+            else:
+                for idx, card in enumerate(flashcards):
+                    st.markdown(f"**Q{idx+1}:** {card['question']}\n\n**A:** {card['answer']}")
+                # Download as PDF
+                flashcard_text = "\n\n".join([f"Q: {c['question']}\nA: {c['answer']}" for c in flashcards])
+                st.download_button("Download PDF", create_pdf(flashcard_text), file_name="flashcards.pdf")
 
 # === Study Plan ===
 elif menu == "Study Plan":
