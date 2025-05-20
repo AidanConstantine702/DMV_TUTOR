@@ -244,15 +244,34 @@ elif menu == "Flashcards":
 # === Study Plan ===
 elif menu == "Study Plan":
     st.header("3-Day Study Plan")
-    if st.button("Create Plan"):
-        prompt = "Create a 3-day SC permit test study plan focused on road signs, alcohol laws, and right-of-way."
-        with st.spinner("Planning..."):
-            plan = query_gpt([
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ])
-            st.markdown(plan)
-            st.download_button("Download PDF", create_pdf(plan), file_name="study_plan.pdf")
+    plan = """
+**3-Day SC DMV Permit Test Study Plan**
+
+**Day 1: Road Signs & Basic Rules**
+- Go to the **Flashcards** page and select "Road Signs" to review all major traffic signs and their meanings.
+- Use the **Practice Quiz** page and choose the "Road Signs" topic to test your knowledge (5–10 questions).
+- Read the Road Signs and Pavement Markings sections in the SC Driver’s Manual (2024).
+
+**Day 2: Right-of-Way & Traffic Laws**
+- On the **Flashcards** page, select "Right of Way" and "Speed Limits" for quick review.
+- Take a **Practice Quiz** on "Right of Way" (and optionally "Speed Limits").
+- Review chapters on intersections, turns, and right-of-way rules in the manual.
+
+**Day 3: Alcohol Laws, Safety, and Final Review**
+- Use the **Flashcards** page to study "Alcohol Laws" and "Traffic Signals."
+- Take a **General Practice Quiz** (select "General" as the topic for a mix of questions).
+- Read about DUI, penalties, and safety laws in the manual.
+- Go to the **Progress Tracker** to review your past quiz scores and focus on weak areas.
+
+**Extra Tips:**
+- Aim to answer all questions honestly—use quizzes and flashcards to target areas you get wrong.
+- Repeat practice quizzes as needed, especially for any topic you feel less confident in.
+- Don’t forget to rest and review any areas you missed before your test day!
+
+Good luck—your consistent practice and use of these study tools will help you pass the SC permit test!
+"""
+    st.markdown(plan)
+    st.download_button("Download PDF", create_pdf(plan), file_name="study_plan.pdf")
 
 # === Progress Tracker ===
 elif menu == "Progress Tracker":
