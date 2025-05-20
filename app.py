@@ -241,19 +241,21 @@ elif menu == "Flashcards":
             ])
             flashcards_data = parse_flashcards(raw_flashcards)
             st.session_state["flashcards_data"] = flashcards_data
-            st.session_state["flashcard_revealed"] = [False] * len(flashcards_data)
+            # Use unique session state keys for each flashcard reveal state
+            for idx in range(len(flashcards_data)):
+                st.session_state[f"flashcard_revealed_{idx}"] = False
 
     if "flashcards_data" in st.session_state:
         st.subheader(f"{topic} Flashcards")
         for idx, card in enumerate(st.session_state["flashcards_data"]):
             st.markdown(f"**Q{idx+1}: {card['question']}**")
-            key = f"flashcard_reveal_{idx}"
-            if st.session_state["flashcard_revealed"][idx]:
+            reveal_key = f"flashcard_revealed_{idx}"
+            # If not revealed, show the button. If revealed, show the answer.
+            if not st.session_state[reveal_key]:
+                if st.button("Reveal Answer", key=f"reveal_btn_{idx}"):
+                    st.session_state[reveal_key] = True
+            if st.session_state[reveal_key]:
                 st.success(f"**A{idx+1}: {card['answer']}**")
-            else:
-                if st.button("Reveal Answer", key=key):
-                    st.session_state["flashcard_revealed"][idx] = True
-                    st.experimental_rerun()  # Forces immediate refresh to show the answer
             st.write("---")
         # Download option
         flashcard_text = "\n\n".join([f"Q{idx+1}: {c['question']}\nA{idx+1}: {c['answer']}" for idx, c in enumerate(st.session_state["flashcards_data"])])
