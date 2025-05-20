@@ -299,9 +299,32 @@ elif menu == "Progress Tracker":
     user_id = user.id
     response = supabase.table("quiz_scores").select("*").eq("user_id", user_id).execute()
     progress = response.data if response else []
+
     if progress:
+        # Group attempts by date for daily accuracy
+        from collections import defaultdict
+
+        date_stats = defaultdict(lambda: {"correct": 0, "attempted": 0, "topics": []})
         for entry in progress:
-            st.markdown(f"**{entry['date']}** - {entry['topic']} — {entry['correct']}/{entry['attempted']} correct")
+            d = entry["date"]
+            date_stats[d]["correct"] += entry["correct"]
+            date_stats[d]["attempted"] += entry["attempted"]
+            date_stats[d]["topics"].append(f'{entry["topic"]} — {entry["correct"]}/{entry["attempted"]} correct')
+
+        # Display each day's stats and accuracy
+        for d in sorted(date_stats.keys(), reverse=True):
+            topics_str = "<br>".join(date_stats[d]["topics"])
+            accuracy = (
+                (date_stats[d]["correct"] / date_stats[d]["attempted"]) * 100
+                if date_stats[d]["attempted"] else 0
+            )
+            st.markdown(
+                f"**{d}**<br>{topics_str}<br>"
+                f"<span style='color: #666;'>Daily Accuracy: <b>{accuracy:.1f}%</b></span><br><br>",
+                unsafe_allow_html=True,
+            )
+
+        # Compute total accuracy
         total_correct = sum(x["correct"] for x in progress)
         total_attempted = sum(x["attempted"] for x in progress)
         if total_attempted:
