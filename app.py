@@ -195,47 +195,45 @@ elif menu == "Practice Quiz":
         st.info("**Please select only one answer per question.**")
         quiz_data = st.session_state["quiz_data"]
 
-        # Store the checkbox states
-        if "checkbox_states" not in st.session_state:
-            st.session_state["checkbox_states"] = [{} for _ in quiz_data]
+        if "checkbox_states" not in st.session_state or len(st.session_state["checkbox_states"]) != len(quiz_data):
+            # Reinitialize for each new quiz
+            st.session_state["checkbox_states"] = [
+                {"A": False, "B": False, "C": False, "D": False} for _ in quiz_data
+            ]
 
         for idx, q in enumerate(quiz_data):
             st.markdown(f"**{idx + 1}. {q['question']}**")
-            options = list(q["options"].items())
-            for opt_idx, (opt_letter, opt_text) in enumerate(options):
-                # Use a unique key for each checkbox
-                key = f"quiz_q{idx}_opt{opt_letter}"
-                # Only allow one box checked at a time per question
-                if key not in st.session_state["checkbox_states"][idx]:
-                    st.session_state["checkbox_states"][idx][key] = False
+            for opt_letter, opt_text in q["options"].items():
+                # The widget key is unique for each option in each question
+                checkbox_key = f"quiz_q{idx}_opt{opt_letter}"
+                # Display the checkbox; update only our custom state on change
+                checked = st.checkbox(
+                    f"{opt_letter}. {opt_text}", 
+                    value=st.session_state["checkbox_states"][idx][opt_letter],
+                    key=checkbox_key
+                )
+                st.session_state["checkbox_states"][idx][opt_letter] = checked
 
-                # Display checkbox
-                checked = st.checkbox(f"{opt_letter}. {opt_text}", key=key)
-                st.session_state["checkbox_states"][idx][key] = checked
+            # Enforce single selection: if more than one selected, warning and invalidate submission
+            selected_options = [opt for opt, val in st.session_state["checkbox_states"][idx].items() if val]
+            if len(selected_options) > 1:
+                st.warning(f"Please select only **one answer** for question {idx+1}.")
 
-                # If this box was just checked, uncheck others in this question
-                if checked:
-                    for other_letter, _ in options:
-                        other_key = f"quiz_q{idx}_opt{other_letter}"
-                        if other_key != key:
-                            st.session_state["checkbox_states"][idx][other_key] = False
-                            st.session_state[other_key] = False
-
-        # Collect answers
+        # Collect answers: if exactly one per question, store; else, None
         quiz_answers = []
+        valid_submission = True
         for idx, q in enumerate(quiz_data):
-            answer_selected = None
-            for opt_letter in q["options"]:
-                key = f"quiz_q{idx}_opt{opt_letter}"
-                if st.session_state["checkbox_states"][idx][key]:
-                    answer_selected = opt_letter
-            quiz_answers.append(answer_selected)
+            selected = [opt for opt, val in st.session_state["checkbox_states"][idx].items() if val]
+            if len(selected) == 1:
+                quiz_answers.append(selected[0])
+            else:
+                quiz_answers.append(None)
+                valid_submission = False
+
         st.session_state["quiz_answers"] = quiz_answers
 
-        # Submission button - only enabled if each question has exactly one answer
-        can_submit = all(ans in ["A", "B", "C", "D"] for ans in quiz_answers)
         if not st.session_state.get("quiz_submitted"):
-            if st.button("Submit Quiz", disabled=not can_submit):
+            if st.button("Submit Quiz", disabled=not valid_submission):
                 st.session_state["quiz_submitted"] = True
                 correct = 0
                 for idx, q in enumerate(quiz_data):
@@ -246,8 +244,8 @@ elif menu == "Practice Quiz":
                 st.markdown("**Correct Answers:**")
                 for i, q in enumerate(quiz_data):
                     st.markdown(f"- Question {i+1}: {q['answer']}")
-            elif not can_submit:
-                st.warning("Please select exactly one answer for each question.")
+            elif not valid_submission:
+                st.warning("Please select **exactly one answer for each question** before submitting.")
 
 # === Flashcards ===
 elif menu == "Flashcards":
