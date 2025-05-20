@@ -192,23 +192,62 @@ elif menu == "Practice Quiz":
 
     if "quiz_data" in st.session_state:
         st.subheader("Take the Quiz")
-        for idx, q in enumerate(st.session_state["quiz_data"]):
-            label = f"{idx + 1}. {q['question']}"
-            options = [f"{key}. {val}" for key, val in q["options"].items()]
-            selected = st.radio(label, options, key=f"q_{idx}")
-            st.session_state["quiz_answers"][idx] = selected[0]
+        st.info("**Please select only one answer per question.**")
+        quiz_data = st.session_state["quiz_data"]
 
-        if not st.session_state.get("quiz_submitted") and st.button("Submit Quiz"):
-            st.session_state["quiz_submitted"] = True
-            correct = 0
-            for idx, q in enumerate(st.session_state["quiz_data"]):
-                if st.session_state["quiz_answers"].get(idx) == q["answer"]:
-                    correct += 1
-            save_score(user.id, topic, correct, len(st.session_state["quiz_data"]))
-            st.success(f"You got {correct} out of {len(st.session_state['quiz_data'])} correct!")
-            st.markdown("**Correct Answers:**")
-            for i, q in enumerate(st.session_state["quiz_data"]):
-                st.markdown(f"- Question {i+1}: {q['answer']}")
+        # Store the checkbox states
+        if "checkbox_states" not in st.session_state:
+            st.session_state["checkbox_states"] = [{} for _ in quiz_data]
+
+        for idx, q in enumerate(quiz_data):
+            st.markdown(f"**{idx + 1}. {q['question']}**")
+            options = list(q["options"].items())
+            for opt_idx, (opt_letter, opt_text) in enumerate(options):
+                # Use a unique key for each checkbox
+                key = f"quiz_q{idx}_opt{opt_letter}"
+                # Only allow one box checked at a time per question
+                if key not in st.session_state["checkbox_states"][idx]:
+                    st.session_state["checkbox_states"][idx][key] = False
+
+                # Display checkbox
+                checked = st.checkbox(f"{opt_letter}. {opt_text}", key=key)
+                st.session_state["checkbox_states"][idx][key] = checked
+
+                # If this box was just checked, uncheck others in this question
+                if checked:
+                    for other_letter, _ in options:
+                        other_key = f"quiz_q{idx}_opt{other_letter}"
+                        if other_key != key:
+                            st.session_state["checkbox_states"][idx][other_key] = False
+                            st.session_state[other_key] = False
+
+        # Collect answers
+        quiz_answers = []
+        for idx, q in enumerate(quiz_data):
+            answer_selected = None
+            for opt_letter in q["options"]:
+                key = f"quiz_q{idx}_opt{opt_letter}"
+                if st.session_state["checkbox_states"][idx][key]:
+                    answer_selected = opt_letter
+            quiz_answers.append(answer_selected)
+        st.session_state["quiz_answers"] = quiz_answers
+
+        # Submission button - only enabled if each question has exactly one answer
+        can_submit = all(ans in ["A", "B", "C", "D"] for ans in quiz_answers)
+        if not st.session_state.get("quiz_submitted"):
+            if st.button("Submit Quiz", disabled=not can_submit):
+                st.session_state["quiz_submitted"] = True
+                correct = 0
+                for idx, q in enumerate(quiz_data):
+                    if quiz_answers[idx] == q["answer"]:
+                        correct += 1
+                save_score(user.id, topic, correct, len(quiz_data))
+                st.success(f"You got {correct} out of {len(quiz_data)} correct!")
+                st.markdown("**Correct Answers:**")
+                for i, q in enumerate(quiz_data):
+                    st.markdown(f"- Question {i+1}: {q['answer']}")
+            elif not can_submit:
+                st.warning("Please select exactly one answer for each question.")
 
 # === Flashcards ===
 elif menu == "Flashcards":
