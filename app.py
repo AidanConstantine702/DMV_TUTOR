@@ -231,15 +231,33 @@ elif menu == "Flashcards":
         prompt = (
             f"Generate 10 flashcards for the topic '{topic}' using a Q&A format only from the SC permit test. "
             "Each flashcard should have a clear question and a short, clear answer. "
-            "Return ONLY flashcards, no extra text, and do not use multiple choice format."
+            "Use exactly this format for each flashcard: Q: [question]\nA: [answer]\n"
+            "Return ONLY flashcards, no extra text, no multiple choice, and no explanations."
         )
         with st.spinner("Creating flashcards..."):
-            flashcards = query_gpt([
+            raw_flashcards = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            st.markdown(flashcards)
-            st.download_button("Download PDF", create_pdf(flashcards), file_name="flashcards.pdf")
+            flashcards_data = parse_flashcards(raw_flashcards)
+            st.session_state["flashcards_data"] = flashcards_data
+            # State for reveal buttons
+            st.session_state["flashcard_revealed"] = [False] * len(flashcards_data)
+
+    if "flashcards_data" in st.session_state:
+        st.subheader(f"{topic} Flashcards")
+        for idx, card in enumerate(st.session_state["flashcards_data"]):
+            st.markdown(f"**Q{idx+1}: {card['question']}**")
+            key = f"flashcard_reveal_{idx}"
+            if st.session_state["flashcard_revealed"][idx]:
+                st.success(f"**A{idx+1}: {card['answer']}**")
+            else:
+                if st.button("Reveal Answer", key=key):
+                    st.session_state["flashcard_revealed"][idx] = True
+            st.write("---")
+        # Download option
+        flashcard_text = "\n\n".join([f"Q{idx+1}: {c['question']}\nA{idx+1}: {c['answer']}" for idx, c in enumerate(st.session_state["flashcards_data"])])
+        st.download_button("Download PDF", create_pdf(flashcard_text), file_name="flashcards.pdf")
 
 # === Study Plan ===
 elif menu == "Study Plan":
