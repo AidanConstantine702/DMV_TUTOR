@@ -168,7 +168,10 @@ elif menu == "Practice Quiz":
     st.header("Practice Quiz")
     st.info("For each question, select your answer. No answer is selected by default. You must answer every question to submit the quiz.")
     num = st.slider("Number of Questions", 5, 10, 5)
-    topic = st.selectbox("Quiz Topic", ["Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"])
+    topic = st.selectbox(
+        "Quiz Topic",
+        ["General", "Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"]
+    )
     if st.button("Generate Quiz"):
         prompt = (
             f"Generate exactly {num} multiple-choice questions for the topic '{topic}' from the South Carolina DMV permit test. "
@@ -199,14 +202,12 @@ elif menu == "Practice Quiz":
             label = f"{idx + 1}. {q['question']}"
             options = ["Select an answer..."] + [f"{key}. {val}" for key, val in q["options"].items()]
             selected = st.radio(label, options, key=f"q_{idx}", index=0)
-            # Only store if not on the dummy option
             if selected != "Select an answer...":
                 st.session_state["quiz_answers"][idx] = selected[0]
             else:
                 st.session_state["quiz_answers"][idx] = None
                 all_answered = False
 
-        # Only enable submit if all are answered
         if st.button("Submit Quiz", disabled=not all_answered):
             st.session_state["quiz_submitted"] = True
             correct = 0
@@ -222,28 +223,23 @@ elif menu == "Practice Quiz":
 # === Flashcards ===
 elif menu == "Flashcards":
     st.header("Flashcards")
-    topic = st.selectbox("Topic", ["Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"])
+    topic = st.selectbox(
+        "Flashcard Topic",
+        ["General", "Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"]
+    )
     if st.button("Generate Flashcards"):
         prompt = (
-            f"Generate 10 flashcards about {topic} for the South Carolina permit test. "
-            "Each flashcard must be in the following format:\n"
-            "Q: [question]\nA: [answer]\n"
-            "Return ONLY the 10 flashcards, no numbers, no multiple choice, no explanations, no extra commentary."
+            f"Generate 10 flashcards for the topic '{topic}' using a Q&A format only from the SC permit test. "
+            "Each flashcard should have a clear question and a short, clear answer. "
+            "Return ONLY flashcards, no extra text, and do not use multiple choice format."
         )
         with st.spinner("Creating flashcards..."):
-            raw = query_gpt([
+            flashcards = query_gpt([
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ])
-            flashcards = parse_flashcards(raw)
-            if not flashcards:
-                st.warning("Could not parse flashcards. Try again.")
-            else:
-                for idx, card in enumerate(flashcards):
-                    st.markdown(f"**Q{idx+1}:** {card['question']}\n\n**A:** {card['answer']}")
-                # Download as PDF
-                flashcard_text = "\n\n".join([f"Q: {c['question']}\nA: {c['answer']}" for c in flashcards])
-                st.download_button("Download PDF", create_pdf(flashcard_text), file_name="flashcards.pdf")
+            st.markdown(flashcards)
+            st.download_button("Download PDF", create_pdf(flashcards), file_name="flashcards.pdf")
 
 # === Study Plan ===
 elif menu == "Study Plan":
