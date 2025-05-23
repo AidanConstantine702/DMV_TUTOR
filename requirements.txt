@@ -1,5 +1,6 @@
+# requirements.txt
 streamlit
 openai>=1.0.0
 reportlab
-python-dotenv
 supabase
+stripe==9.*
