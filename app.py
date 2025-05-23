@@ -6,6 +6,44 @@ from io import BytesIO
 import datetime
 import re
 from supabase import create_client, Client
+import stripe
+stripe.api_key = st.secrets["stripe"]["secret_key"]
+PRICE_ID       = st.secrets["stripe"]["price_id"]
+SUCCESS_URL    = st.secrets["stripe"]["success_url"]
+CANCEL_URL     = st.secrets["stripe"]["cancel_url"]
+
+def create_checkout_session(user_email):
+    """Create a Stripe Checkout session and return its URL."""
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        customer_email=user_email,
+        line_items=[{"price": PRICE_ID, "quantity": 1}],
+        mode="payment",
+        success_url=f"{SUCCESS_URL}?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=CANCEL_URL,
+    )
+    return session.url
+
+def verify_and_grant_access(session_id, user_id):
+    """
+    Called once after redirect from Stripe.
+    If payment is complete, write a row to user_access.
+    """
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        if session.payment_status == "paid":
+            supabase.table("user_access").upsert(
+                {"user_id": user_id}  # purchased_at defaults to now()
+            ).execute()
+            return True
+    except Exception as e:
+        st.error(f"Stripe verification failed: {e}")
+    return False
+
+def user_has_access(user_id):
+    """True/False for whether this user bought the product."""
+    res = supabase.table("user_access").select("user_id").eq("user_id", user_id).execute()
+    return bool(res.data)
 
 # === Load credentials ===
 supabase_url = st.secrets["supabase"]["url"]
