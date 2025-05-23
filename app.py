@@ -41,7 +41,7 @@ if not has_access:
 page = st.sidebar.radio(
     "Navigation",
     ["Tutor Chat",
-     *([\"Practice Quiz\",\"Flashcards\"] if has_access else []),
+     *(["Practice Quiz","Flashcards"] if has_access else []),
      "Study Plan","Progress Tracker"]
 )
 
