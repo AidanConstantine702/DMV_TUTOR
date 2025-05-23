@@ -1,4 +1,4 @@
-# utils.py
+import streamlit as st          # ← add this line
 import re, datetime
 from io import BytesIO
 from reportlab.pdfgen import canvas
