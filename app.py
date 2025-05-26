@@ -183,6 +183,10 @@ checkout_url = None                    # will hold Stripe URL if we create one
 # ---- Pay‑wall button + dynamic navigation ------------------------------
 if not has_access:
     st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
+    if st.sidebar.button("Buy Lifetime Access"):
+        checkout_url = create_checkout_session(user.email)
+        st.session_state.checkout_url = checkout_url   # <‑‑ store it
+        st.rerun()                                     # re‑run app
 
     # Create the Checkout Session on button click
     if st.sidebar.button("Buy Lifetime Access"):
