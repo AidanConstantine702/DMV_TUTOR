@@ -169,6 +169,14 @@ if "user" not in st.session_state:
     login_ui()
     st.stop()
 user = st.session_state["user"]
+# ---- Stripe redirect handler ----
+params = st.experimental_get_query_params()
+if "session_id" in params:                        # back from Checkout
+    if verify_and_grant_access(params["session_id"][0], user.id):
+        st.success("Payment confirmed – access unlocked! 🎉")
+    st.experimental_set_query_params()            # clear ?session_id
+
+has_access = user_has_access(user.id)             # do they own Lifetime Access?
 menu = st.sidebar.radio("Navigation", ["Tutor Chat", "Practice Quiz", "Flashcards", "Study Plan", "Progress Tracker"])
 # === Tutor Chat ===
 if menu == "Tutor Chat":
