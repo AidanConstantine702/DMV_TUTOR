@@ -202,8 +202,6 @@ if not has_access:
             """,
             unsafe_allow_html=True,
         )
-        st.sidebar.info("The button above opens Stripe in a new tab. "
-                        "If nothing happens, make sure pop‑ups are allowed.")
 
 # build nav_items … (unchanged)
 # ----------------------------------------------------------------------
