@@ -174,7 +174,7 @@ params = st.query_params
 if "session_id" in params:                        # back from Checkout
     if verify_and_grant_access(params["session_id"][0], user.id):
         st.success("Payment confirmed – access unlocked! 🎉")
-    st.experimental_set_query_params()            # clear ?session_id
+    st.query_params.clear()            # clear ?session_id
 
 has_access = user_has_access(user.id)             # do they own Lifetime Access?
 # ---- Pay‑wall button + dynamic navigation ----
