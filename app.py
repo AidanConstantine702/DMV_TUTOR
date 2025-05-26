@@ -177,7 +177,9 @@ if "session_id" in params:                        # back from Checkout
     st.experimental_set_query_params()            # clear ?session_id
 
 has_access = user_has_access(user.id)             # do they own Lifetime Access?
-menu = st.sidebar.radio("Navigation", ["Tutor Chat", "Practice Quiz", "Flashcards", "Study Plan", "Progress Tracker"])
+menu = st.sidebar.radio("Navigation",
+                        ["Tutor Chat", "Practice Quiz", "Flashcards",
+                         "Study Plan", "Progress Tracker"])
 # === Tutor Chat ===
 if menu == "Tutor Chat":
     st.header("Chat with Your DMV Tutor")
