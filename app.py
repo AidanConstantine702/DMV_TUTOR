@@ -170,7 +170,7 @@ if "user" not in st.session_state:
     st.stop()
 user = st.session_state["user"]
 # ---- Stripe redirect handler ----
-params = st.experimental_get_query_params()
+params = st.query_params
 if "session_id" in params:                        # back from Checkout
     if verify_and_grant_access(params["session_id"][0], user.id):
         st.success("Payment confirmed – access unlocked! 🎉")
