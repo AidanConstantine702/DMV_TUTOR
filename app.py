@@ -8,6 +8,24 @@ from supabase import create_client, Client
 import stripe
 import streamlit as st
 
+# ── Immediate redirect to Stripe Checkout if flagged ────────────────
+if "checkout_url" in st.session_state:
+    url = st.session_state.pop("checkout_url")   # run only once
+
+    st.markdown(
+        f"""
+        <script type="text/javascript">
+            // Break out of any Streamlit iframe and load Stripe
+            window.top.location.href = "{url}";
+        </script>
+        <p>Redirecting you to secure Stripe Checkout…  
+        <a href="{url}">Click here</a> if you are not redirected.</p>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
+# ────────────────────────────────────────────────────────────────────
+
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
 stripe.api_key  = st.secrets["stripe"]["secret_key"]
 PRICE_ID        = st.secrets["stripe"]["price_id"]
