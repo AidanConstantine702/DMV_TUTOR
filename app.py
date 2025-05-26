@@ -6,24 +6,7 @@ import datetime
 import re
 from supabase import create_client, Client
 import stripe
-
-# ── Immediate redirect if a Checkout URL is waiting ─────────────────────
 import streamlit as st
-
-if "checkout_url" in st.session_state:
-    url = st.session_state.pop("checkout_url")          # run only once
-
-    # Meta refresh sends the whole browser tab to Stripe Checkout
-    st.markdown(
-        f"""
-        <meta http-equiv="refresh" content="0; url={url}">
-        If you are not redirected automatically,
-        <a href="{url}">click here</a>.
-        """,
-        unsafe_allow_html=True,
-    )
-    st.stop()                                           # skip rest of app
-# ────────────────────────────────────────────────────────────────────────
 
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
 stripe.api_key  = st.secrets["stripe"]["secret_key"]
