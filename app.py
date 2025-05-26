@@ -9,20 +9,20 @@ import stripe
 
 # ── Immediate redirect if a Checkout URL is waiting ─────────────────────
 import streamlit as st
-import streamlit.components.v1 as components
 
 if "checkout_url" in st.session_state:
-    url = st.session_state.pop("checkout_url")   # only run once
+    url = st.session_state.pop("checkout_url")          # run only once
 
-    components.html(
+    # Meta refresh sends the whole browser tab to Stripe Checkout
+    st.markdown(
         f"""
-        <script>
-            window.top.location.replace("{url}");
-        </script>
+        <meta http-equiv="refresh" content="0; url={url}">
+        If you are not redirected automatically,
+        <a href="{url}">click here</a>.
         """,
-        height=0, width=0,
+        unsafe_allow_html=True,
     )
-    st.stop()
+    st.stop()                                           # skip rest of app
 # ────────────────────────────────────────────────────────────────────────
 
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
