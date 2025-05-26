@@ -214,16 +214,19 @@ if menu == "Tutor Chat":
         st.rerun()
 # === Practice Quiz ===
 elif menu == "Practice Quiz":
-        if not has_access:
+    if not has_access:
         st.error("Please purchase Lifetime Access to use Practice Quizzes.")
         st.stop()
+
     st.header("Practice Quiz")
     st.info("For each question, select your answer. No answer is selected by default. You must answer every question to submit the quiz.")
+
     num = st.slider("Number of Questions", 5, 10, 5)
     topic = st.selectbox(
         "Quiz Topic",
         ["General", "Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"]
     )
+
     if st.button("Generate Quiz"):
         prompt = (
             f"Generate exactly {num} multiple-choice questions for the topic '{topic}' from the South Carolina DMV permit test. "
@@ -245,40 +248,47 @@ elif menu == "Practice Quiz":
             st.session_state["quiz_data"] = parse_quiz(raw_quiz)
             st.session_state["quiz_answers"] = {}
             st.session_state["quiz_submitted"] = False
+
     if "quiz_data" in st.session_state:
         st.subheader("Take the Quiz")
         quiz_data = st.session_state["quiz_data"]
         all_answered = True
+
         for idx, q in enumerate(quiz_data):
             label = f"{idx + 1}. {q['question']}"
             options = ["Select an answer..."] + [f"{key}. {val}" for key, val in q["options"].items()]
             selected = st.radio(label, options, key=f"q_{idx}", index=0)
+
             if selected != "Select an answer...":
                 st.session_state["quiz_answers"][idx] = selected[0]
             else:
                 st.session_state["quiz_answers"][idx] = None
                 all_answered = False
+
         if st.button("Submit Quiz", disabled=not all_answered):
             st.session_state["quiz_submitted"] = True
-            correct = 0
-            for idx, q in enumerate(quiz_data):
-                if st.session_state["quiz_answers"].get(idx) == q["answer"]:
-                    correct += 1
+            correct = sum(
+                1 for idx, q in enumerate(quiz_data)
+                if st.session_state["quiz_answers"].get(idx) == q["answer"]
+            )
             save_score(user.id, topic, correct, len(quiz_data))
             st.success(f"You got {correct} out of {len(quiz_data)} correct!")
             st.markdown("**Correct Answers:**")
             for i, q in enumerate(quiz_data):
                 st.markdown(f"- Question {i+1}: {q['answer']}")
+
 # === Flashcards ===
 elif menu == "Flashcards":
-        if not has_access:
+    if not has_access:
         st.error("Please purchase Lifetime Access to use Flashcards.")
         st.stop()
+
     st.header("Flashcards")
     topic = st.selectbox(
         "Flashcard Topic",
         ["General", "Road Signs", "Right of Way", "Alcohol Laws", "Speed Limits", "Traffic Signals"]
     )
+
     if st.button("Generate Flashcards"):
         prompt = (
             f"Generate 10 flashcards for the topic '{topic}' using a Q&A format only from the SC permit test. "
@@ -293,24 +303,30 @@ elif menu == "Flashcards":
             ])
             flashcards_data = parse_flashcards(raw_flashcards)
             st.session_state["flashcards_data"] = flashcards_data
-            # Use unique session state keys for each flashcard reveal state
-            for idx in range(len(flashcards_data)):
-                st.session_state[f"flashcard_revealed_{idx}"] = False
+            st.session_state["flashcard_revealed"] = [False] * len(flashcards_data)
+
     if "flashcards_data" in st.session_state:
         st.subheader(f"{topic} Flashcards")
+
         for idx, card in enumerate(st.session_state["flashcards_data"]):
             st.markdown(f"**Q{idx+1}: {card['question']}**")
-            reveal_key = f"flashcard_revealed_{idx}"
-            # If not revealed, show the button. If revealed, show the answer.
-            if not st.session_state[reveal_key]:
+            if not st.session_state["flashcard_revealed"][idx]:
                 if st.button("Reveal Answer", key=f"reveal_btn_{idx}"):
-                    st.session_state[reveal_key] = True
-            if st.session_state[reveal_key]:
+                    st.session_state["flashcard_revealed"][idx] = True
+
+            if st.session_state["flashcard_revealed"][idx]:
                 st.success(f"**A{idx+1}: {card['answer']}**")
             st.write("---")
+
         # Download option
-        flashcard_text = "\n\n".join([f"Q{idx+1}: {c['question']}\nA{idx+1}: {c['answer']}" for idx, c in enumerate(st.session_state["flashcards_data"])])
-        st.download_button("Download PDF", create_pdf(flashcard_text), file_name="flashcards.pdf")
+        flashcard_text = "\n\n".join(
+            [f"Q{idx+1}: {c['question']}\nA{idx+1}: {c['answer']}" 
+             for idx, c in enumerate(st.session_state["flashcards_data"])]
+        )
+        st.download_button(
+            "Download PDF", create_pdf(flashcard_text), file_name="flashcards.pdf"
+        )
+
 # === Study Plan ===
 elif menu == "Study Plan":
     st.header("3-Day Study Plan")
