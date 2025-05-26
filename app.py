@@ -169,26 +169,46 @@ if "user" not in st.session_state:
     login_ui()
     st.stop()
 user = st.session_state["user"]
-# ---- Stripe redirect handler ----
+# ---- Stripe redirect handler -------------------------------------------
 params = st.query_params
-if "session_id" in params:                        # back from Checkout
+if "session_id" in params:
     if verify_and_grant_access(params["session_id"][0], user.id):
         st.success("Payment confirmed – access unlocked! 🎉")
-    st.query_params = {}            # clear ?session_id
+    st.query_params = {}          # clear ?session_id
 
-has_access = user_has_access(user.id)             # do they own Lifetime Access?
-# ---- Pay‑wall button + dynamic navigation ----
+has_access = user_has_access(user.id)   # do they own Lifetime Access?
+checkout_url = None                    # will hold Stripe URL if we create one
+# -------------------------------------------------------------------------
+
+# ---- Pay‑wall button + dynamic navigation ------------------------------
 if not has_access:
-    st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
-    if st.sidebar.button("Buy Lifetime Access"):
-        st.experimental_redirect(create_checkout_session(user.email))
+    st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
 
+    # Create the Checkout Session on button click
+    if st.sidebar.button("Buy Lifetime Access"):
+        checkout_url = create_checkout_session(user.email)
+        st.sidebar.success("Redirecting to Stripe…")
+
+        # Immediate redirect via HTML/JS (works across Streamlit versions)
+        st.sidebar.markdown(
+            f"""
+            <meta http-equiv="refresh" content="0; url={checkout_url}">
+            <script>
+                window.location.href = "{checkout_url}";
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.stop()  # prevent rest of the script from running on this pass
+
+# Build the navigation list
 nav_items = ["Tutor Chat"]
 if has_access:
     nav_items += ["Practice Quiz", "Flashcards"]
 nav_items += ["Study Plan", "Progress Tracker"]
 
 menu = st.sidebar.radio("Navigation", nav_items)
+# -------------------------------------------------------------------------
 
 # === Tutor Chat ===
 if menu == "Tutor Chat":
