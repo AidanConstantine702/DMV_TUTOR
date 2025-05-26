@@ -181,7 +181,7 @@ has_access = user_has_access(user.id)             # do they own Lifetime Access?
 if not has_access:
     st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
     if st.sidebar.button("Buy Lifetime Access"):
-        st.experimental_redirect(create_checkout_session(user.email))
+        st.redirect(create_checkout_session(user.email))
 
 nav_items = ["Tutor Chat"]
 if has_access:
