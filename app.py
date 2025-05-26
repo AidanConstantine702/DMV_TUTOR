@@ -177,9 +177,19 @@ if "session_id" in params:                        # back from Checkout
     st.experimental_set_query_params()            # clear ?session_id
 
 has_access = user_has_access(user.id)             # do they own Lifetime Access?
-menu = st.sidebar.radio("Navigation",
-                        ["Tutor Chat", "Practice Quiz", "Flashcards",
-                         "Study Plan", "Progress Tracker"])
+# ---- Pay‑wall button + dynamic navigation ----
+if not has_access:
+    st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
+    if st.sidebar.button("Buy Lifetime Access"):
+        st.experimental_redirect(create_checkout_session(user.email))
+
+nav_items = ["Tutor Chat"]
+if has_access:
+    nav_items += ["Practice Quiz", "Flashcards"]
+nav_items += ["Study Plan", "Progress Tracker"]
+
+menu = st.sidebar.radio("Navigation", nav_items)
+
 # === Tutor Chat ===
 if menu == "Tutor Chat":
     st.header("Chat with Your DMV Tutor")
@@ -204,6 +214,9 @@ if menu == "Tutor Chat":
         st.rerun()
 # === Practice Quiz ===
 elif menu == "Practice Quiz":
+        if not has_access:
+        st.error("Please purchase Lifetime Access to use Practice Quizzes.")
+        st.stop()
     st.header("Practice Quiz")
     st.info("For each question, select your answer. No answer is selected by default. You must answer every question to submit the quiz.")
     num = st.slider("Number of Questions", 5, 10, 5)
@@ -258,6 +271,9 @@ elif menu == "Practice Quiz":
                 st.markdown(f"- Question {i+1}: {q['answer']}")
 # === Flashcards ===
 elif menu == "Flashcards":
+        if not has_access:
+        st.error("Please purchase Lifetime Access to use Flashcards.")
+        st.stop()
     st.header("Flashcards")
     topic = st.selectbox(
         "Flashcard Topic",
