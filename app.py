@@ -204,8 +204,17 @@ if not has_access:
     st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
     if st.sidebar.button("Buy Lifetime Access", key="btn_buy_sidebar"):
         checkout_url = create_checkout_session(user.email)
-        st.session_state.checkout_url = checkout_url
-        st.rerun()
+
+        # Open Stripe Checkout in a NEW TAB at top‑level
+        st.sidebar.markdown(
+            f"""
+            <script>
+                window.open("{checkout_url}", "_blank", "noopener,noreferrer");
+            </script>
+            [If the window didn’t open, click here]({checkout_url})
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Create the Checkout Session on button click
     if st.sidebar.button("Buy Lifetime Access"):
