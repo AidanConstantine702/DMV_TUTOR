@@ -182,7 +182,6 @@ has_access = user_has_access(user.id)   # do they own Lifetime Access?
 checkout_url = None                    # will hold Stripe URL if we create one
 # -------------------------------------------------------------------------
 
-# ---- Pay‑wall button + dynamic navigation ------------------------------
 # ---- Pay‑wall button + navigation ------------------------------------
 if not has_access:
     st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
@@ -205,23 +204,6 @@ if not has_access:
 
 # build nav_items … (unchanged)
 # ----------------------------------------------------------------------
-
-    # Create the Checkout Session on button click
-    if st.sidebar.button("Buy Lifetime Access"):
-        checkout_url = create_checkout_session(user.email)
-        st.sidebar.success("Redirecting to Stripe…")
-
-        # Immediate redirect via HTML/JS (works across Streamlit versions)
-        st.sidebar.markdown(
-            f"""
-            <meta http-equiv="refresh" content="0; url={checkout_url}">
-            <script>
-                window.location.href = "{checkout_url}";
-            </script>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.stop()  # prevent rest of the script from running on this pass
 
 # Build the navigation list
 nav_items = ["Tutor Chat"]
