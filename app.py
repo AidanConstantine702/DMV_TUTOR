@@ -6,6 +6,17 @@ import streamlit as st
 from openai import OpenAI
 from io import BytesIO
 from reportlab.pdfgen import canvas
+if "checkout_url" in st.session_state:
+    url = st.session_state.pop("checkout_url")   # remove flag
+    st.markdown(
+        f"""
+        <script>
+            window.location.href = "{url}";
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
 stripe.api_key = st.secrets["stripe"]["secret_key"]
 PRICE_ID       = st.secrets["stripe"]["price_id"]
 SUCCESS_URL    = st.secrets["stripe"]["success_url"]
