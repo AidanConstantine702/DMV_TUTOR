@@ -8,24 +8,6 @@ from supabase import create_client, Client
 import stripe
 import streamlit as st
 
-# ── Immediate redirect to Stripe Checkout if flagged ────────────────
-if "checkout_url" in st.session_state:
-    url = st.session_state.pop("checkout_url")   # run only once
-
-    st.markdown(
-        f"""
-        <script type="text/javascript">
-            // Break out of any Streamlit iframe and load Stripe
-            window.top.location.href = "{url}";
-        </script>
-        <p>Redirecting you to secure Stripe Checkout…  
-        <a href="{url}">Click here</a> if you are not redirected.</p>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.stop()
-# ────────────────────────────────────────────────────────────────────
-
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
 stripe.api_key  = st.secrets["stripe"]["secret_key"]
 PRICE_ID        = st.secrets["stripe"]["price_id"]
@@ -201,21 +183,30 @@ checkout_url = None                    # will hold Stripe URL if we create one
 # -------------------------------------------------------------------------
 
 # ---- Pay‑wall button + dynamic navigation ------------------------------
+# ---- Pay‑wall button + navigation ------------------------------------
 if not has_access:
     st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
+
     if st.sidebar.button("Buy Lifetime Access", key="btn_buy_sidebar"):
         checkout_url = create_checkout_session(user.email)
 
-        # Open Stripe Checkout in a NEW TAB at top‑level
+        # Show a normal hyperlink that opens Stripe in a new tab
         st.sidebar.markdown(
             f"""
-            <script>
-                window.open("{checkout_url}", "_blank", "noopener,noreferrer");
-            </script>
-            [If the window didn’t open, click here]({checkout_url})
+            ### ✅ Step 2: Complete payment  
+            <a href="{checkout_url}" target="_blank" rel="noopener noreferrer">
+                <button style="padding:0.6em 1.2em; font-size:1rem;">
+                    Open Secure Stripe Checkout
+                </button>
+            </a>
             """,
             unsafe_allow_html=True,
         )
+        st.sidebar.info("The button above opens Stripe in a new tab. "
+                        "If nothing happens, make sure pop‑ups are allowed.")
+
+# build nav_items … (unchanged)
+# ----------------------------------------------------------------------
 
     # Create the Checkout Session on button click
     if st.sidebar.button("Buy Lifetime Access"):
