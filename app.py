@@ -7,18 +7,22 @@ import re
 from supabase import create_client, Client
 import stripe
 
-# ── Immediate redirect if a Stripe Checkout URL is waiting ──────────────
+# ── Immediate redirect if a Checkout URL is waiting ─────────────────────
+import streamlit as st
+import streamlit.components.v1 as components
+
 if "checkout_url" in st.session_state:
-    url = st.session_state.pop("checkout_url")      # run only once
-    st.markdown(
+    url = st.session_state.pop("checkout_url")   # only run once
+
+    components.html(
         f"""
         <script>
-            window.location.replace("{url}");
+            window.top.location.replace("{url}");
         </script>
         """,
-        unsafe_allow_html=True,
+        height=0, width=0,
     )
-    st.stop()                                       # skip the rest
+    st.stop()
 # ────────────────────────────────────────────────────────────────────────
 
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
