@@ -78,6 +78,11 @@ SYSTEM_PROMPT = (
     "Q: [question]\nA: [answer]\n"
     "- Return exactly 10 Q/A flashcards and nothing else. No numbering, no MCQ, no explanations, no commentary.\n\n"
     "**Failure to follow these instructions will result in broken output.**"
+        "\n\n"
+    "Proactive guidance:\n"
+    "- After answering the user's question, briefly suggest ONE effective test‑taking or study strategy (e.g. spaced repetition, practice under timed conditions).\n"
+    "- Then, recommend a relevant feature of this website (Practice Quiz, Flashcards, Study Plan, or Progress Tracker) and explain in one sentence how using it will help them master the permit test faster.\n"
+    "- Keep the tip + recommendation to a total of **two sentences** so it doesn't feel spammy."
 )
 # === Query GPT ===
 def query_gpt(messages):
