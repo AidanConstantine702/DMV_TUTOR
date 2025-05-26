@@ -1,29 +1,36 @@
-import datetime
-import re
-from supabase import create_client, Client
-import stripe
 import streamlit as st
 from openai import OpenAI
 from io import BytesIO
 from reportlab.pdfgen import canvas
+import datetime
+import re
+from supabase import create_client, Client
+import stripe
+
+# ── Immediate redirect if a Stripe Checkout URL is waiting ──────────────
 if "checkout_url" in st.session_state:
-    url = st.session_state.pop("checkout_url")   # remove flag
+    url = st.session_state.pop("checkout_url")      # run only once
     st.markdown(
         f"""
         <script>
-            window.location.href = "{url}";
+            window.location.replace("{url}");
         </script>
         """,
         unsafe_allow_html=True,
     )
-    st.stop()
-stripe.api_key = st.secrets["stripe"]["secret_key"]
-PRICE_ID       = st.secrets["stripe"]["price_id"]
-SUCCESS_URL    = st.secrets["stripe"]["success_url"]
-CANCEL_URL     = st.secrets["stripe"]["cancel_url"]
+    st.stop()                                       # skip the rest
+# ────────────────────────────────────────────────────────────────────────
 
-def create_checkout_session(user_email):
-    """Create a Stripe Checkout session and return its URL."""
+# ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
+stripe.api_key  = st.secrets["stripe"]["secret_key"]
+PRICE_ID        = st.secrets["stripe"]["price_id"]
+SUCCESS_URL     = st.secrets["stripe"]["success_url"]
+CANCEL_URL      = st.secrets["stripe"]["cancel_url"]
+# ────────────────────────────────────────────────────────────────────────
+
+
+def create_checkout_session(user_email: str) -> str:
+    """Return a Stripe Checkout URL for Lifetime‑Access purchase."""
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         customer_email=user_email,
@@ -34,24 +41,21 @@ def create_checkout_session(user_email):
     )
     return session.url
 
-def verify_and_grant_access(session_id, user_id):
-    """
-    Called once after redirect from Stripe.
-    If payment is complete, write a row to user_access.
-    """
+
+def verify_and_grant_access(session_id: str, user_id: str) -> bool:
+    """If payment succeeded, upsert row in user_access and return True."""
     try:
         session = stripe.checkout.Session.retrieve(session_id)
         if session.payment_status == "paid":
-            supabase.table("user_access").upsert(
-                {"user_id": user_id}  # purchased_at defaults to now()
-            ).execute()
+            supabase.table("user_access").upsert({"user_id": user_id}).execute()
             return True
     except Exception as e:
         st.error(f"Stripe verification failed: {e}")
     return False
 
-def user_has_access(user_id):
-    """True/False for whether this user bought the product."""
+
+def user_has_access(user_id: str) -> bool:
+    """Check if the user already purchased Lifetime Access."""
     res = supabase.table("user_access").select("user_id").eq("user_id", user_id).execute()
     return bool(res.data)
 
