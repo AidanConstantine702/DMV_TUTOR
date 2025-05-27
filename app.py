@@ -36,7 +36,8 @@ def verify_and_grant_access(session_id: str, user_id: str) -> bool:
         # Debug info – see what's actually coming back
         st.write("DEBUG: Stripe session.status:", session.status)
         st.write("DEBUG: Stripe payment_status:", session.payment_status)
-        if session.status == "complete":
+        # The key thing is to check for payment_status == "paid"
+        if session.payment_status == "paid":
             supabase_srv.table("user_access").upsert({"user_id": user_id}).execute()
             return True
     except Exception as e:
