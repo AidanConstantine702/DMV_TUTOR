@@ -173,10 +173,11 @@ if "user" not in st.session_state:
 user = st.session_state["user"]
 # ---- Stripe redirect handler -------------------------------------------
 params = st.query_params
-if "session_id" in params:
-    if verify_and_grant_access(params["session_id"][0], user.id):
+sid = params.get("session_id")        # full ID, e.g. cs_live_a1B2C3...
+if sid:                               # only run if present
+    if verify_and_grant_access(sid, user.id):
         st.success("Payment confirmed – access unlocked! 🎉")
-    st.query_params = {}          # clear ?session_id
+    st.query_params = {}              # clear ?session_id
 
 has_access = user_has_access(user.id)   # do they own Lifetime Access?
 checkout_url = None                    # will hold Stripe URL if we create one
