@@ -33,7 +33,10 @@ def verify_and_grant_access(session_id: str, user_id: str) -> bool:
     """If payment succeeded, upsert row in user_access and return True."""
     try:
         session = stripe.checkout.Session.retrieve(session_id)
-        if session.payment_status == "paid":
+        # Debug info – see what's actually coming back
+        st.write("DEBUG: Stripe session.status:", session.status)
+        st.write("DEBUG: Stripe payment_status:", session.payment_status)
+        if session.status == "complete":
             supabase.table("user_access").upsert({"user_id": user_id}).execute()
             return True
     except Exception as e:
