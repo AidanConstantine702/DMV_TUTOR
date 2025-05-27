@@ -227,6 +227,31 @@ else:
 menu = st.sidebar.radio("Navigation", nav_items)
 # ------------------------------------------------------------------------
 
+# === What You Get (CTA) ================================================
+if menu == "What You Get":
+    st.header("Unlock the Full DMV Tutor Experience 🚀")
+
+    st.markdown("""
+### Lifetime Access – $30 one‑time
+
+| Feature | Why it rocks |
+|---------|--------------|
+| **AI Tutor Chat** | Ask *any* permit question and get teen‑friendly answers 24/7. |
+| **Practice Quizzes** | Auto‑graded SC‑specific quizzes that track what you miss. |
+| **Smart Flashcards** | Tap to reveal, repeat the tricky ones – perfect for quick study bursts. |
+| **3‑Day “Permit‑Ready” Plan** | A bite‑sized schedule that tells you exactly what to do each day. |
+| **Progress Tracker** | See your accuracy %, spot weak topics, and watch your score climb. |
+
+---
+
+### Ready to roll?
+Click **“Buy Lifetime Access”** in the sidebar to open secure Stripe Checkout.  
+Come back with everything unlocked in under a minute!
+""")
+
+    st.stop()   # prevent other pages from rendering until purchase
+# =======================================================================
+
 # === Tutor Chat ===
 if menu == "Tutor Chat":
     st.header("Chat with Your DMV Tutor")
