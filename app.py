@@ -184,15 +184,19 @@ checkout_url = None                    # will hold Stripe URL if we create one
 
 # ---- Pay‑wall button + navigation ------------------------------------
 if not has_access:
-    st.sidebar.warning("🚧 Practice Quiz & Flashcards are locked until purchase.")
+    # ----- Step 1 -----
+    st.sidebar.markdown("## 🪧 Step 1 — Select Lifetime Access plan")
 
     if st.sidebar.button("Buy Lifetime Access", key="btn_buy_sidebar"):
         checkout_url = create_checkout_session(user.email)
 
-        # Show a normal hyperlink that opens Stripe in a new tab
+        # ----- Step 2 appears once plan is chosen -----
+        st.sidebar.markdown("""
+        ### ✅ Step 1 — Selected  
+        ### 🏁 Step 2 — Complete payment
+        """)
         st.sidebar.markdown(
             f"""
-            ### ✅ Step 2: Complete payment  
             <a href="{checkout_url}" target="_blank" rel="noopener noreferrer">
                 <button style="padding:0.6em 1.2em; font-size:1rem;">
                     Open Secure Stripe Checkout
@@ -201,6 +205,10 @@ if not has_access:
             """,
             unsafe_allow_html=True,
         )
+        st.sidebar.info("Checkout opens in a new tab. "
+                        "Return here after payment is complete.")
+    else:
+        st.sidebar.markdown("*Click the button above to start.*")
 
 # build nav_items … (unchanged)
 # ----------------------------------------------------------------------
