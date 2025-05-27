@@ -211,16 +211,21 @@ if not has_access:
         st.sidebar.markdown("*Click the button above to start.*")
 
 # build nav_items … (unchanged)
-# ----------------------------------------------------------------------
 
-# Build the navigation list
-nav_items = ["Tutor Chat"]
+# ----- Navigation -------------------------------------------------------
 if has_access:
-    nav_items += ["Practice Quiz", "Flashcards"]
-nav_items += ["Study Plan", "Progress Tracker"]
+    nav_items = [
+        "Tutor Chat",
+        "Practice Quiz",
+        "Flashcards",
+        "Study Plan",
+        "Progress Tracker",
+    ]
+else:
+    nav_items = ["What You Get"]          # CTA page only before purchase
 
 menu = st.sidebar.radio("Navigation", nav_items)
-# -------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 
 # === Tutor Chat ===
 if menu == "Tutor Chat":
