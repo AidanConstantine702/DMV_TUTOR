@@ -37,7 +37,7 @@ def verify_and_grant_access(session_id: str, user_id: str) -> bool:
         st.write("DEBUG: Stripe session.status:", session.status)
         st.write("DEBUG: Stripe payment_status:", session.payment_status)
         if session.status == "complete":
-            supabase.table("user_access").upsert({"user_id": user_id}).execute()
+            supabase_srv.table("user_access").upsert({"user_id": user_id}).execute()
             return True
     except Exception as e:
         st.error(f"Stripe verification failed: {e}")
@@ -56,6 +56,10 @@ api_key = st.secrets["openai_api_key"]
 # === Initialize Supabase and OpenAI ===
 supabase: Client = create_client(supabase_url, supabase_key)
 client = OpenAI(api_key=api_key, project="proj_36JJwFCLQG34Xyiqb0EWUJlN")
+# === Initialize Supabase "admin" client for bypassing RLS (used ONLY for access unlock) ===
+supabase_srv: Client = create_client(supabase_url, st.secrets["supabase"]["service_key"])
+
+
 # === System Prompt ===
 SYSTEM_PROMPT = (
     "You are a certified South Carolina DMV Permit Test Tutor specializing in helping teenagers "
