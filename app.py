@@ -29,17 +29,16 @@ def create_checkout_session(user_email: str, user_id: str) -> str:
     return session.url
 
 
-def verify_and_grant_access(session_id: str, user_id: str) -> bool:
-    """If payment succeeded, upsert row in user_access and return True."""
+def verify_and_grant_access(session_id: str, user_id: str = None) -> bool:
     try:
         session = stripe.checkout.Session.retrieve(session_id)
-        # Debug info – see what's actually coming back
-        st.write("DEBUG: Stripe session.status:", session.status)
-        st.write("DEBUG: Stripe payment_status:", session.payment_status)
-        # The key thing is to check for payment_status == "paid"
         if session.payment_status == "paid":
-            supabase_srv.table("user_access").upsert({"user_id": user_id}).execute()
-            st.write("DEBUG: user_access table after upsert:", supabase_srv.table("user_access").select("*").eq("user_id", user_id).execute().data)
+            # Try using provided user_id, or fallback to metadata
+            uid = user_id or session.metadata.get("user_id")
+            if not uid:
+                st.error("Unable to verify user ID after payment. Please contact support.")
+                return False
+            supabase_srv.table("user_access").upsert({"user_id": uid}).execute()
             return True
     except Exception as e:
         st.error(f"Stripe verification failed: {e}")
