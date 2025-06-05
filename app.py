@@ -16,8 +16,7 @@ CANCEL_URL      = st.secrets["stripe"]["cancel_url"]
 # ────────────────────────────────────────────────────────────────────────
 
 
-def create_checkout_session(user_email: str) -> str:
-    """Return a Stripe Checkout URL for Lifetime‑Access purchase."""
+def create_checkout_session(user_email: str, user_id: str) -> str:
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         customer_email=user_email,
@@ -25,6 +24,7 @@ def create_checkout_session(user_email: str) -> str:
         mode="payment",
         success_url=f"{SUCCESS_URL}?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=CANCEL_URL,
+        metadata={"user_id": user_id, "user_email": user_email},  # <--- add this!
     )
     return session.url
 
