@@ -69,7 +69,6 @@ client = OpenAI(api_key=api_key, project="proj_36JJwFCLQG34Xyiqb0EWUJlN")
 # === Initialize Supabase "admin" client for bypassing RLS (used ONLY for access unlock) ===
 supabase_srv: Client = create_client(supabase_url, st.secrets["supabase"]["service_key"])
 
-
 # === System Prompt ===
 SYSTEM_PROMPT = (
     "You are a certified South Carolina DMV Permit Test Tutor specializing in helping teenagers "
