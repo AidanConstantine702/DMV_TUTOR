@@ -39,6 +39,7 @@ def verify_and_grant_access(session_id: str, user_id: str) -> bool:
         # The key thing is to check for payment_status == "paid"
         if session.payment_status == "paid":
             supabase_srv.table("user_access").upsert({"user_id": user_id}).execute()
+            st.write("DEBUG: user_access table after upsert:", supabase_srv.table("user_access").select("*").eq("user_id", user_id).execute().data)
             return True
     except Exception as e:
         st.error(f"Stripe verification failed: {e}")
