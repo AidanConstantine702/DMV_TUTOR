@@ -191,6 +191,8 @@ if sid:
     st.query_params = {}              # clear ?session_id
 
 has_access = user_has_access(user.id)   # do they own Lifetime Access?
+st.write("DEBUG: user.id", user.id)
+st.write("DEBUG: has_access is", has_access)
 checkout_url = None                    # will hold Stripe URL if we create one
 # -------------------------------------------------------------------------
 
