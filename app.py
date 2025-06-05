@@ -11,17 +11,10 @@ import streamlit as st
 # --- Handle post-checkout redirect ---
 params = st.query_params
 if "session_id" in params:
-    sid = params["session_id"][0]
+    sid = params["session_id"][0] if isinstance(params["session_id"], list) else params["session_id"]
     # If not logged in yet, save session_id to session_state for after login
-    if "user" not in st.session_state:
-        st.session_state["post_login_session_id"] = sid
-    else:
-        # If already logged in, grant access immediately
-        if verify_and_grant_access(sid, st.session_state["user"].id):
-            st.success("Payment confirmed – access unlocked! 🎉")
-            st.experimental_rerun()
-    # Clear the query param to prevent loops
-    st.query_params = {}
+    st.session_state["post_login_session_id"] = sid
+    st.query_params = {}  # always clear it right after
 
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
 stripe.api_key  = st.secrets["stripe"]["secret_key"]
