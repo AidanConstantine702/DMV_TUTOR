@@ -8,6 +8,21 @@ from supabase import create_client, Client
 import stripe
 import streamlit as st
 
+# --- Handle post-checkout redirect ---
+params = st.query_params
+if "session_id" in params:
+    sid = params["session_id"][0]
+    # If not logged in yet, save session_id to session_state for after login
+    if "user" not in st.session_state:
+        st.session_state["post_login_session_id"] = sid
+    else:
+        # If already logged in, grant access immediately
+        if verify_and_grant_access(sid, st.session_state["user"].id):
+            st.success("Payment confirmed – access unlocked! 🎉")
+            st.experimental_rerun()
+    # Clear the query param to prevent loops
+    st.query_params = {}
+
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
 stripe.api_key  = st.secrets["stripe"]["secret_key"]
 PRICE_ID        = st.secrets["stripe"]["price_id"]
