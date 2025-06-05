@@ -203,7 +203,7 @@ if not has_access:
     st.sidebar.markdown("## 🪧 Step 1 — Select Lifetime Access plan")
 
     if st.sidebar.button("Buy Lifetime Access", key="btn_buy_sidebar"):
-        checkout_url = create_checkout_session(user.email)
+        checkout_url = create_checkout_session(user.email, user.id)
 
         # ----- Step 2 appears once plan is chosen -----
         st.sidebar.markdown("""
