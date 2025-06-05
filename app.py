@@ -8,14 +8,6 @@ from supabase import create_client, Client
 import stripe
 import streamlit as st
 
-# --- Handle post-checkout redirect ---
-params = st.query_params
-if "session_id" in params:
-    sid = params["session_id"][0] if isinstance(params["session_id"], list) else params["session_id"]
-    # If not logged in yet, save session_id to session_state for after login
-    st.session_state["post_login_session_id"] = sid
-    st.query_params = {}  # always clear it right after
-
 # ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
 stripe.api_key  = st.secrets["stripe"]["secret_key"]
 PRICE_ID        = st.secrets["stripe"]["price_id"]
@@ -23,6 +15,15 @@ SUCCESS_URL     = st.secrets["stripe"]["success_url"]
 CANCEL_URL      = st.secrets["stripe"]["cancel_url"]
 # ────────────────────────────────────────────────────────────────────────
 
+# --- Stripe post-checkout session handler (run BEFORE login check!) ---
+params = st.query_params
+if "session_id" in params:
+    sid = params["session_id"][0] if isinstance(params["session_id"], list) else params["session_id"]
+    # Only set if NOT logged in yet!
+    if "user" not in st.session_state:
+        st.session_state["post_login_session_id"] = sid
+    # Always clear query params
+    st.query_params = {}
 
 def create_checkout_session(user_email: str, user_id: str) -> str:
     session = stripe.checkout.Session.create(
