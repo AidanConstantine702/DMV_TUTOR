@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from openai import OpenAI
 from io import BytesIO
@@ -6,13 +7,22 @@ import datetime
 import re
 from supabase import create_client, Client
 import stripe
-import streamlit as st
 
-# ── Stripe config (all secrets must exist in .streamlit/secrets.toml) ──
-stripe.api_key  = st.secrets["stripe"]["secret_key"]
-PRICE_ID        = st.secrets["stripe"]["price_id"]
-SUCCESS_URL     = st.secrets["stripe"]["success_url"]
-CANCEL_URL      = st.secrets["stripe"]["cancel_url"]
+# ── Load configuration from env vars or st.secrets ─────────────────────
+def env_or_secret(env: str, section: str | None, key: str):
+    if env in os.environ:
+        return os.environ[env]
+    if section:
+        if section in st.secrets and key in st.secrets[section]:
+            return st.secrets[section][key]
+    elif key in st.secrets:
+        return st.secrets[key]
+    raise RuntimeError(f"Missing configuration for {env}")
+
+stripe.api_key  = env_or_secret("STRIPE_SECRET_KEY", "stripe", "secret_key")
+PRICE_ID        = env_or_secret("STRIPE_PRICE_ID", "stripe", "price_id")
+SUCCESS_URL     = env_or_secret("STRIPE_SUCCESS_URL", "stripe", "success_url")
+CANCEL_URL      = env_or_secret("STRIPE_CANCEL_URL", "stripe", "cancel_url")
 # ────────────────────────────────────────────────────────────────────────
 
 # --- Stripe post-checkout session handler (run BEFORE login check!) ---
@@ -60,14 +70,15 @@ def user_has_access(user_id: str) -> bool:
     return bool(res.data)
 
 # === Load credentials ===
-supabase_url = st.secrets["supabase"]["url"]
-supabase_key = st.secrets["supabase"]["key"]
-api_key = st.secrets["openai_api_key"]
+supabase_url = env_or_secret("SUPABASE_URL", "supabase", "url")
+supabase_anon_key = env_or_secret("SUPABASE_ANON_KEY", "supabase", "anon_key")
+supabase_service_key = env_or_secret("SUPABASE_SERVICE_ROLE_KEY", "supabase", "service_key")
+api_key = env_or_secret("OPENAI_API_KEY", None, "openai_api_key")
 # === Initialize Supabase and OpenAI ===
-supabase: Client = create_client(supabase_url, supabase_key)
+supabase: Client = create_client(supabase_url, supabase_anon_key)
 client = OpenAI(api_key=api_key, project="proj_36JJwFCLQG34Xyiqb0EWUJlN")
 # === Initialize Supabase "admin" client for bypassing RLS (used ONLY for access unlock) ===
-supabase_srv: Client = create_client(supabase_url, st.secrets["supabase"]["service_key"])
+supabase_srv: Client = create_client(supabase_url, supabase_service_key)
 
 # === System Prompt ===
 SYSTEM_PROMPT = (
