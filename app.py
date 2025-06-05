@@ -171,6 +171,16 @@ def login_ui():
             if user.user:
                 st.session_state["user"] = user.user
                 st.success("Logged in successfully!")
+                if "post_login_session_id" in st.session_state:
+    sid = st.session_state.pop("post_login_session_id")
+    access_granted = verify_and_grant_access(sid, user.user.id)
+    if access_granted:
+        st.success("Payment confirmed – access unlocked! 🎉")
+    else:
+        st.warning("Payment could not be verified. Please contact support if this was an error.")
+    st.experimental_rerun()
+else:
+    st.experimental_rerun()
                 # --- New: Check if we have a saved post-login session_id
                 if "post_login_session_id" in st.session_state:
                     sid = st.session_state.pop("post_login_session_id")
@@ -198,6 +208,19 @@ if "user" not in st.session_state:
     login_ui()
     st.stop()
 user = st.session_state["user"]
+
+def process_pending_stripe():
+    # Only run if just-logged-in and have a pending Stripe session
+    sid = st.session_state.pop("post_login_session_id", None)
+    if sid:
+        access_granted = verify_and_grant_access(sid, user.id)
+        if access_granted:
+            st.success("Payment confirmed – access unlocked! 🎉")
+        else:
+            st.warning("Payment could not be verified. Please contact support if this was an error.")
+        st.experimental_rerun()
+
+process_pending_stripe()
 # ---- Stripe redirect handler -------------------------------------------
 
 has_access = user_has_access(user.id)   # do they own Lifetime Access?
