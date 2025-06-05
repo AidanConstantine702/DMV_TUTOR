@@ -187,6 +187,7 @@ if sid:
     session_id = sid[0] if isinstance(sid, list) else sid
     if verify_and_grant_access(session_id, user.id):
         st.success("Payment confirmed – access unlocked! 🎉")
+        st.experimental_rerun()   # <--- THIS LINE IS NEW
     st.query_params = {}              # clear ?session_id
 
 has_access = user_has_access(user.id)   # do they own Lifetime Access?
