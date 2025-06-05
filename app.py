@@ -160,14 +160,16 @@ def login_ui():
         try:
             user = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if user.user:
-                                st.session_state["user"] = user.user
-                st.success("Logged in successfully!")
-                # --- New: Check if we have a saved post-login session_id
-                if "post_login_session_id" in st.session_state:
-                    sid = st.session_state.pop("post_login_session_id")
-                    if verify_and_grant_access(sid, user.user.id):
-                        st.success("Payment confirmed – access unlocked! 🎉")
-                        st.rerun()
+    st.session_state["user"] = user.user
+    st.success("Logged in successfully!")
+    # --- New: Check if we have a saved post-login session_id
+    if "post_login_session_id" in st.session_state:
+        sid = st.session_state.pop("post_login_session_id")
+        if verify_and_grant_access(sid, user.user.id):
+            st.success("Payment confirmed – access unlocked! 🎉")
+            st.rerun()
+    else:
+        st.rerun()
                 else:
                     st.rerun()
         except Exception:
