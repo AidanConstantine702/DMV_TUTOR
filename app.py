@@ -198,19 +198,6 @@ if "user" not in st.session_state:
     st.stop()
 user = st.session_state["user"]
 # ---- Stripe redirect handler -------------------------------------------
-params = st.query_params
-sid = params.get("session_id")
-if sid:
-    session_id = sid[0] if isinstance(sid, list) else sid
-    if "user" not in st.session_state:
-        # User is not logged in, save session_id to use after login
-        st.session_state["post_login_session_id"] = session_id
-    else:
-        # User is already logged in, grant access now
-        if verify_and_grant_access(session_id, getattr(user, "id", None)):
-            st.success("Payment confirmed – access unlocked! 🎉")
-            st.rerun()
-    st.query_params = {}  # clear ?session_id
 
 has_access = user_has_access(user.id)   # do they own Lifetime Access?
 st.write("DEBUG: user.id", user.id)
