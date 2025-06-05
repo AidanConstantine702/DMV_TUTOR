@@ -185,7 +185,7 @@ sid = params.get("session_id")        # should be a list or None
 if sid:
     # Extract the actual session_id string
     session_id = sid[0] if isinstance(sid, list) else sid
-    if verify_and_grant_access(session_id, user.id):
+    if verify_and_grant_access(session_id, getattr(user, "id", None)):
         st.success("Payment confirmed – access unlocked! 🎉")
         st.rerun()   # <--- THIS LINE IS NEW
     st.query_params = {}              # clear ?session_id
