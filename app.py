@@ -172,15 +172,15 @@ def login_ui():
                 st.success("Logged in successfully!")
                 # --- New: Check if we have a saved post-login session_id
                 if "post_login_session_id" in st.session_state:
-    sid = st.session_state.pop("post_login_session_id")
-    access_granted = verify_and_grant_access(sid, user.user.id)
-    if access_granted:
-        st.success("Payment confirmed – access unlocked! 🎉")
-    else:
-        st.warning("Payment could not be verified. Please contact support if this was an error.")
-    st.rerun()
-else:
-    st.rerun()
+                    sid = st.session_state.pop("post_login_session_id")
+                    access_granted = verify_and_grant_access(sid, user.user.id)
+                    if access_granted:
+                        st.success("Payment confirmed – access unlocked! 🎉")
+                    else:
+                        st.warning("Payment could not be verified. Please contact support if this was an error.")
+                    st.rerun()
+                else:
+                    st.rerun()
         except Exception:
             st.error("Login failed. Check your credentials.")
     if st.button("Sign Up"):
